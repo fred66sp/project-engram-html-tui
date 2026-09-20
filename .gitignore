@@ -28,3 +28,7 @@ youtube-transcript-free/
 # engram-web
 node_modules/
 dist/
+
+# Export de memoria de Engram: no se versiona
+engram-export.json
+engram-export-*.json
