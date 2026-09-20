@@ -465,6 +465,24 @@ code {
   color: var(--bad);
 }
 
+/* Project inventory: a prunable project is an opportunity, a path-named one is a problem. */
+.badge-prune {
+  border-color: var(--ok);
+  color: var(--ok);
+}
+
+.badge-path {
+  border-color: var(--bad);
+  color: var(--bad);
+}
+
+/* Associated directories are collapsed by default; the wrap keeps long paths inside the cell. */
+.dir-list {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  overflow-wrap: anywhere;
+}
+
 /* Raw prompt content: keep the runtime's line breaks without wrapping surprises. */
 .prompt-block {
   margin: 8px 0 0;

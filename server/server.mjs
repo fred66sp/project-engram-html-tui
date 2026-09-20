@@ -1,11 +1,17 @@
-// Production server for engram-web: serves the built SPA and proxies /api/* to the
-// Engram local runtime. Same-origin by design: the local API emits no CORS headers and
-// answers 405 to OPTIONS, so the browser can never call it cross-origin.
+// Production server for engram-web: serves the built SPA, answers /local/projects from the
+// engram binary and proxies /api/* to the Engram local runtime. Same-origin by design: the
+// local API emits no CORS headers and answers 405 to OPTIONS, so the browser can never call
+// it cross-origin.
+//
+// Routes: /local/projects -> project inventory over MCP stdio (server/projects.mjs);
+//         /api/*           -> pure rewrite to the runtime; anything else -> SPA files.
 //
 // Usage: node server/server.mjs   (after `npm run build`)
 // Env:   PORT (default 7438), ENGRAM_URL (default http://127.0.0.1:7437),
-//        ENGRAM_HTTP_TOKEN (optional Bearer token for protected routes)
+//        ENGRAM_HTTP_TOKEN (optional Bearer token for protected routes),
+//        ENGRAM_BIN (default engram), ENGRAM_MCP_TIMEOUT_MS (default 10000)
 import { createServer } from 'node:http'
+import { createProjectsHandler } from './projects.mjs'
 import { readFile, stat } from 'node:fs/promises'
 import { extname, join, normalize, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -27,6 +33,8 @@ const MIME = {
   '.woff2': 'font/woff2',
   '.map': 'application/json; charset=utf-8',
 }
+
+const projectsHandler = createProjectsHandler()
 
 const HOP_BY_HOP = new Set(['host', 'connection', 'content-length', 'accept-encoding', 'transfer-encoding'])
 
@@ -94,7 +102,8 @@ async function serveStatic(res, pathname) {
 createServer(async (req, res) => {
   const url = new URL(req.url ?? '/', `http://${req.headers.host ?? '127.0.0.1'}`)
   try {
-    if (url.pathname === '/api' || url.pathname.startsWith('/api/')) await proxy(req, res, url)
+    if (url.pathname === '/local/projects') await projectsHandler(req, res)
+    else if (url.pathname === '/api' || url.pathname.startsWith('/api/')) await proxy(req, res, url)
     else await serveStatic(res, url.pathname)
   } catch (error) {
     fail(res, 500, error.message)

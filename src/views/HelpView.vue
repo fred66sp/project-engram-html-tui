@@ -15,6 +15,7 @@
         <li><a href="#conexion">Cómo se conecta</a></li>
         <li><a href="#arranque">Cómo arrancarla</a></li>
         <li><a href="#pantallas">Las pantallas</a></li>
+        <li><a href="#proyectos">Proyectos</a></li>
         <li><a href="#vocabulario">Vocabulario y filtros</a></li>
         <li><a href="#escrituras">Qué hace cada acción de escritura</a></li>
         <li><a href="#limitaciones">Limitaciones conocidas</a></li>
@@ -132,6 +133,11 @@
           El proxy añade la cabecera <code>Authorization: Bearer</code> cuando existe
           <code>ENGRAM_HTTP_TOKEN</code>.
         </li>
+        <li>
+          La única excepción es <code>/local/projects</code>, el inventario de proyectos: no es una
+          reescritura sino una ruta que responde el servidor propio en su mismo proceso, sin pasar
+          por el runtime. Se detalla en <a href="#proyectos">Proyectos</a>.
+        </li>
       </ul>
     </section>
 
@@ -208,6 +214,11 @@
           <code>npm run check:writes</code>: intercepta <code>fetch</code> y comprueba el método,
           la ruta y el cuerpo de cada mutación sin usar la red, para probar el camino de escritura
           sin tocar la memoria real.
+        </li>
+        <li>
+          <code>npm run check:projects</code>: ejercita el inventario de proyectos sin red y sin
+          lanzar ningún proceso; parsea un ciclo MCP capturado e intercepta <code>fetch</code> para
+          revisar la llamada del cliente.
         </li>
         <li><code>npm run build</code>: comprobación de tipos más build de producción.</li>
       </ul>
@@ -296,8 +307,97 @@
               <code>manual-save-&lt;proyecto&gt;</code>, igual que <code>engram save</code>.
             </td>
           </tr>
+          <tr>
+            <td>Proyectos</td>
+            <td><code>/projects</code></td>
+            <td>
+              Inventario del almacén con conteos y directorios, marca de los proyectos podables y
+              de los nombres con ruta, y los comandos de poda y consolidación para copiar. Solo lee.
+            </td>
+          </tr>
         </tbody>
       </table>
+    </section>
+
+    <section id="proyectos" class="help-section">
+      <h2>Proyectos</h2>
+      <p>
+        <code>/projects</code> muestra el inventario del almacén: cada proyecto con sus conteos
+        (observaciones, sesiones y prompts) y los directorios asociados. Es la pantalla de la higiene
+        de nombres, que el resto de la interfaz no puede ver. <strong>Solo lee</strong>: no ejecuta
+        ninguna orden, y su única interacción es copiar un comando al portapapeles.
+      </p>
+
+      <h3>Por qué existe</h3>
+      <p>
+        El API HTTP del runtime no ofrece gestión de proyectos, y además rechaza los nombres con
+        ruta —justo los que la poda tiene que limpiar— con <code>400 invalid_project</code> («project
+        must be a name, not a path»). El selector de proyecto de la barra superior se llena desde
+        <code>/stats?all_projects=true</code>, que devuelve nombres sueltos <strong>sin conteos</strong>
+        y omite únicamente los proyectos sin observaciones. Un nombre con ruta sí aparece ahí si tiene
+        observaciones, aunque después no se pueda consultar, y los podables no aparecen nunca. Sin
+        esta pantalla, esa higiene de nombres es invisible desde el navegador.
+      </p>
+      <p>
+        Por eso sus datos no salen del API HTTP: los responde el servidor propio en
+        <code>/local/projects</code>, con un único ciclo
+        <code>engram mcp --tools=mem_list_projects</code> por stdio. Es la única ruta que
+        <strong>no</strong> es una reescritura hacia el runtime, y se apoya en la misma consulta que
+        <code>engram projects list</code>, así que la pantalla y el CLI no divergen.
+      </p>
+      <p>
+        Dos variables la configuran: <code>ENGRAM_BIN</code> (por defecto <code>engram</code>) elige
+        el binario, y <code>ENGRAM_MCP_TIMEOUT_MS</code> (por defecto <code>10000</code>) fija el
+        tiempo máximo del ciclo. El proceso recibe argumentos fijos y ningún dato llegado del
+        navegador; si el binario no está, la pantalla responde un error legible, nunca un inventario
+        vacío.
+      </p>
+
+      <h3>Qué marca la tabla</h3>
+      <ul>
+        <li>
+          <strong>sin observaciones · podable</strong>: el proyecto no tiene ninguna observación, que
+          es la única condición que el runtime acepta para podarlo.
+        </li>
+        <li>
+          <strong>nombre con ruta · no consultable por HTTP</strong>: su nombre lleva ruta
+          (<code>/</code>, <code>\</code> o <code>:</code>), así que el API HTTP lo rechaza con
+          <code>400 invalid_project</code>. Puede aparecer en la lista de nombres de
+          <code>/stats?all_projects=true</code> si tiene observaciones, pero no se puede consultar por
+          HTTP. Solo se puede consultar aquí.
+        </li>
+      </ul>
+
+      <h3>Qué hace realmente la poda</h3>
+      <p class="help-note help-note-warn">
+        <code>engram projects prune</code> <strong>borra de verdad</strong> los prompts del proyecto y
+        sus sesiones sin observaciones, y <strong>no tiene vuelta atrás</strong>: el runtime no expone
+        ninguna restauración. Además se niega a podar un proyecto al que le queden observaciones
+        (<code>… still has N observations — cannot prune</code>), así que solo entran los proyectos
+        marcados como podables. La poda real es interactiva y <code>--dry-run</code> solo lista, no
+        borra.
+      </p>
+      <p>
+        La pantalla ofrece el comando con su botón de copia, pero no lo ejecuta: la decisión de esta
+        interfaz es no añadir superficie destructiva nueva en el navegador. Se copia y se lanza en una
+        terminal, a mano.
+      </p>
+
+      <h3>El límite de la consolidación</h3>
+      <p>
+        <code>engram projects consolidate</code> solo fusiona nombres que canonizan al mismo nombre:
+        minúsculas y colapso de <code>--</code> y <code>__</code>. Cualquier otra cosa el propio
+        almacén la rechaza con
+        <code>source project "…" must normalize to canonical project "…"</code>. Por eso
+        <code>c:/docker-curso</code> y <code>docker-curso</code>
+        <strong>no se pueden fusionar</strong>: normalizan a nombres distintos.
+      </p>
+      <p>
+        Para esos casos el camino es manual: mover las observaciones al proyecto correcto desde el
+        detalle de cada observación (el campo <code>project</code> es editable) y después podar el
+        nombre que quede con cero observaciones. La pantalla no propone fusiones ni marca
+        equivalencias: la autoridad es el comando y su <code>--dry-run</code>.
+      </p>
     </section>
 
     <section id="vocabulario" class="help-section">
@@ -430,8 +530,14 @@
             </td>
           </tr>
           <tr>
-            <td><code>/stats</code> no expone contadores por proyecto.</td>
-            <td>El Dashboard solo lista nombres de proyectos; los totales son globales.</td>
+            <td>
+              <code>/stats?all_projects=true</code> solo devuelve nombres de proyectos, sin conteos, y
+              omite los que no tienen observaciones.
+            </td>
+            <td>
+              El Dashboard lista esos nombres y totales globales; los conteos por proyecto y los
+              proyectos podables solo aparecen en Proyectos, que los lee por otra vía.
+            </td>
           </tr>
           <tr>
             <td>El timeline exige un proyecto explícito y sus tramos vacíos pueden llegar como <code>null</code>.</td>
@@ -442,10 +548,36 @@
           </tr>
           <tr>
             <td>
-              La gestión de proyectos (prune/consolidate), la configuración de setup de agentes y la
-              sincronización con la nube no están disponibles por HTTP.
+              No hay endpoints de gestión de proyectos por HTTP (listado, poda o fusión), ni
+              configuración de setup de agentes, ni sincronización con la nube.
             </td>
-            <td>Siguen en el CLI y la TUI; la interfaz no las simula.</td>
+            <td>
+              Proyectos lee el inventario por MCP en <code>/local/projects</code> y copia los comandos
+              de poda y consolidación; no los ejecuta. La configuración de agentes y la nube siguen en
+              el CLI y la TUI.
+            </td>
+          </tr>
+          <tr>
+            <td>
+              El API HTTP rechaza los nombres con ruta con <code>400 invalid_project</code> («project
+              must be a name, not a path») en <code>/stats</code>, <code>/observations</code>,
+              <code>/sessions/recent</code> y <code>/prompts/recent</code>.
+            </td>
+            <td>
+              El inventario los marca como «nombre con ruta · no consultable por HTTP»; el resto de
+              pantallas no puede consultarlos ni filtrar por ellos.
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <code>MergeProjects</code> falla a propósito si el nombre de origen no normaliza al
+              canónico: <code>source project "…" must normalize to canonical project "…"</code>.
+            </td>
+            <td>
+              Proyectos muestra <code>engram projects consolidate --all --dry-run</code> como autoridad
+              y no propone fusiones; los nombres con ruta se resuelven moviendo sus observaciones una a
+              una y podando después el nombre que quede vacío.
+            </td>
           </tr>
         </tbody>
       </table>

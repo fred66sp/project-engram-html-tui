@@ -11,6 +11,7 @@
     "preview": "vite preview",
     "smoke": "node scripts/smoke-api.ts",
     "check:writes": "node scripts/check-writes.ts",
+    "check:projects": "node scripts/check-projects.ts",
     "start": "node server/server.mjs"
   },
   "dependencies": {

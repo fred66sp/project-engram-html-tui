@@ -22,8 +22,15 @@
   publicación y qué implica actualizar), qué hace cada pantalla, el vocabulario del runtime, qué hace
   exactamente cada acción de escritura y las limitaciones conocidas. La sección de Engram incluye una
   línea de estado con la versión del runtime que está escuchando.
-- Comprobaciones ejecutables: `npm run smoke`, que lee del runtime vivo, y `npm run check:writes`,
-  que verifica método, ruta y cuerpo de cada mutación sin usar la red.
+- Pantalla de Proyectos (`/projects`) con el inventario del almacén: tabla de proyectos con sus
+  conteos (observaciones, sesiones y prompts) y directorios asociados, marca de los proyectos
+  podables y de los nombres con ruta, y los comandos de poda y consolidación con botón de copia. Los
+  datos salen de la ruta local `/local/projects`, que responde el servidor propio con un ciclo
+  `engram mcp --tools=mem_list_projects` sobre el binario de Engram (configurable con `ENGRAM_BIN`,
+  con `ENGRAM_MCP_TIMEOUT_MS` como límite de tiempo), nunca del API HTTP.
+- Comprobaciones ejecutables: `npm run smoke`, que lee del runtime vivo, `npm run check:writes`,
+  que verifica método, ruta y cuerpo de cada mutación sin usar la red, y `npm run check:projects`,
+  que ejercita el inventario sin red y sin lanzar ningún proceso.
 
 ### Notas
 
@@ -39,5 +46,16 @@
 - Carencias conocidas del API: no hay detalle de sesión por HTTP, no hay paginación por offset en
   observaciones ni prompts, el filtro por tipo solo existe en la búsqueda, las relaciones de
   conflicto se identifican con `sync_id` en lugar de los identificadores numéricos que necesita la
-  vista de detalle, `/stats` no expone contadores por proyecto, y la gestión de proyectos, la
-  configuración de agentes y la sincronización con la nube siguen fuera de la interfaz.
+  vista de detalle, `/stats?all_projects=true` no expone contadores por proyecto y omite los
+  proyectos sin observaciones, `/stats?project=<ruta>` (y `/observations`, `/sessions/recent` y
+  `/prompts/recent`) responde `400 invalid_project`, y no existe ningún endpoint de gestión de
+  proyectos, ni de configuración de agentes, ni de sincronización con la nube.
+- La pantalla de Proyectos solo muestra y copia: la interfaz web no ejecuta la poda ni la
+  consolidación, a propósito, para no añadir superficie destructiva en el navegador.
+- La poda de proyectos (`engram projects prune`) borra los prompts del proyecto y sus sesiones sin
+  observaciones, y el runtime no expone ninguna restauración: no hay vuelta atrás.
+- La consolidación (`engram projects consolidate`) solo puede fusionar nombres que normalizan al
+  mismo nombre (minúsculas y colapso de `--` y `__`); el propio almacén rechaza lo demás con
+  `source project "…" must normalize to canonical project "…"`, así que los nombres con ruta no se
+  pueden fusionar por esa vía. Para esos casos hay que mover las observaciones al proyecto correcto
+  una a una y podar después el nombre que quede vacío.

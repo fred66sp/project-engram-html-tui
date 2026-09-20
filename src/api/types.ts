@@ -170,6 +170,27 @@ export interface ProjectReadOptions {
   allProjects?: boolean
 }
 
+// ---- Project inventory (phase 4: served by /local/projects, not by the runtime) ----
+
+/**
+ * One entry of `mem_list_projects` (`store.ListProjectsWithStats`), the same query the CLI
+ * uses. Field names are the tool's own; do not rename them.
+ */
+export interface ProjectStats {
+  name: string
+  observation_count: number
+  session_count: number
+  prompt_count: number
+  directories: string[]
+}
+
+/** Shape of `GET /local/projects`; `binary` is the engram binary the server spawned. */
+export interface ProjectInventory {
+  projects: ProjectStats[]
+  count: number
+  binary?: string
+}
+
 // ---- Write payloads (phase 2: controlled writes) ----
 
 /**

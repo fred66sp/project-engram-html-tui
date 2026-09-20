@@ -6,6 +6,10 @@
 // The SPA always calls `/api/*`; Vite (dev) and server/server.mjs (prod) rewrite it to the
 // runtime origin, so the browser stays same-origin (the runtime sends no CORS headers).
 // The runnable smoke check overrides the base for direct calls: see scripts/smoke-api.ts.
+//
+// The project inventory is the one exception: `getProjects()` targets `/local/projects`,
+// answered in-process by the dev plugin or the production server, never proxied to the
+// runtime (which has no project-listing endpoint and rejects path-like project names).
 import type {
   ConflictList,
   ConflictStats,
@@ -24,7 +28,9 @@ import type {
   Observation,
   ObservationPatch,
   PinResult,
+  ProjectInventory,
   ProjectReadOptions,
+  ProjectStats,
   Prompt,
   RelationVerb,
   ReviewList,
@@ -86,8 +92,8 @@ function projectParams(options?: ProjectReadOptions): Params {
   return { project: options.project }
 }
 
-async function request<T>(path: string, params?: Params, init?: RequestInit): Promise<T> {
-  const url = `${BASE}${path}${toQuery(params)}`
+async function request<T>(path: string, params?: Params, init?: RequestInit, base = BASE): Promise<T> {
+  const url = `${base}${path}${toQuery(params)}`
 
   let response: Response
   try {
@@ -226,6 +232,62 @@ export function getConflictStats(options?: ProjectReadOptions): Promise<Conflict
 
 export function getDoctor(project?: string): Promise<DoctorReport> {
   return request<DoctorReport>('/doctor', { project })
+}
+
+/**
+ * Reads the projects inventory from the local server (`/local/projects`). The runtime has no
+ * project-listing endpoint and rejects path-like project names, so this is served in-process
+ * over the engram binary and is deliberately not part of the `/api` proxy.
+ *
+ * This function is the validating trust boundary for that route, because the two ways the
+ * payload can be wrong both crash the view instead of showing its error state:
+ *
+ * - A server process started before this route existed falls through to the SPA fallback and
+ *   answers `index.html` with 200 + text/html. `request()` keeps that raw string as the body
+ *   and returns it as `T`, so the shape check below is what rejects it.
+ * - The Go store builds `ProjectStats` and only appends to `Directories` for sessions with a
+ *   directory, so a nil `[]string` marshals as JSON `null`; the view reads
+ *   `project.directories.length`, so a non-array must be normalized to `[]`.
+ */
+export async function getProjects(): Promise<ProjectInventory> {
+  const body = await request<unknown>('/local/projects', undefined, undefined, '')
+
+  if (!body || typeof body !== 'object' || !Array.isArray((body as { projects?: unknown }).projects)) {
+    throw new ApiError(
+      0,
+      'La ruta /local/projects no devolvió un inventario JSON (probablemente index.html). ' +
+        'Suele ocurrir cuando el servidor en ejecución se inició antes de que existiera esta ruta. ' +
+        'Reinícialo con `npm start` o recarga la página tras `npm run dev`.',
+    )
+  }
+
+  const payload = body as { projects: unknown[]; count?: unknown; binary?: unknown }
+  const projects = payload.projects.map((entry) => {
+    if (!entry || typeof entry !== 'object') {
+      throw new ApiError(
+        0,
+        'La ruta /local/projects devolvió una entrada de proyecto que no es un objeto. ' +
+          'Comprueba que el servidor en ejecución sea el actual (`npm start`).',
+      )
+    }
+    const project = entry as Record<string, unknown>
+    return {
+      // `name` and the three counts travel exactly as the runtime sends them.
+      name: project.name as string,
+      observation_count: project.observation_count as number,
+      session_count: project.session_count as number,
+      prompt_count: project.prompt_count as number,
+      // A nil Go slice marshals as JSON `null`; normalize it so `.length` is always safe.
+      directories: Array.isArray(project.directories) ? (project.directories as string[]) : [],
+    } satisfies ProjectStats
+  })
+
+  const inventory: ProjectInventory = {
+    projects,
+    count: typeof payload.count === 'number' ? payload.count : projects.length,
+  }
+  if (typeof payload.binary === 'string') inventory.binary = payload.binary
+  return inventory
 }
 
 // ---- Controlled writes (phase 2) ----
