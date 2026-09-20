@@ -14,7 +14,7 @@ import { createServer } from 'node:http'
 import { createProjectsHandler } from './projects.mjs'
 import { readFile, stat } from 'node:fs/promises'
 import { extname, join, normalize, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const DIST = resolve(fileURLToPath(new URL('.', import.meta.url)), '..', 'dist')
 const PORT = Number(process.env.PORT ?? 7438)
@@ -34,8 +34,6 @@ const MIME = {
   '.map': 'application/json; charset=utf-8',
 }
 
-const projectsHandler = createProjectsHandler()
-
 const HOP_BY_HOP = new Set(['host', 'connection', 'content-length', 'accept-encoding', 'transfer-encoding'])
 
 function fail(res, status, message) {
@@ -49,8 +47,8 @@ async function readBody(req) {
   return chunks.length ? Buffer.concat(chunks) : undefined
 }
 
-async function proxy(req, res, url) {
-  const upstream = new URL(ENGRAM_URL)
+async function proxy(req, res, url, { engramUrl, token }) {
+  const upstream = new URL(engramUrl)
   const target = new URL(url.pathname.replace(/^\/api/, '') + url.search, upstream)
 
   const headers = {}
@@ -58,7 +56,7 @@ async function proxy(req, res, url) {
     if (HOP_BY_HOP.has(key.toLowerCase()) || value === undefined) continue
     headers[key] = Array.isArray(value) ? value.join(', ') : value
   }
-  if (TOKEN && !headers.authorization) headers.authorization = `Bearer ${TOKEN}`
+  if (token && !headers.authorization) headers.authorization = `Bearer ${token}`
 
   const body = req.method === 'GET' || req.method === 'HEAD' ? undefined : await readBody(req)
 
@@ -66,7 +64,7 @@ async function proxy(req, res, url) {
   try {
     response = await fetch(target, { method: req.method, headers, body, redirect: 'manual' })
   } catch (error) {
-    fail(res, 502, `engram runtime unreachable at ${ENGRAM_URL}: ${error.message}`)
+    fail(res, 502, `engram runtime unreachable at ${engramUrl}: ${error.message}`)
     return
   }
 
@@ -77,17 +75,17 @@ async function proxy(req, res, url) {
   res.end(Buffer.from(await response.arrayBuffer()))
 }
 
-async function serveStatic(res, pathname) {
+async function serveStatic(res, pathname, dist) {
   const relative = normalize(decodeURIComponent(pathname)).replace(/^([/\\])+/, '')
-  let file = join(DIST, relative)
-  if (!file.startsWith(DIST)) file = join(DIST, 'index.html')
+  let file = join(dist, relative)
+  if (!file.startsWith(dist)) file = join(dist, 'index.html')
 
   try {
     const info = await stat(file)
     if (info.isDirectory()) file = join(file, 'index.html')
   } catch {
     // SPA fallback: unknown paths are client-side routes.
-    file = join(DIST, 'index.html')
+    file = join(dist, 'index.html')
   }
 
   try {
@@ -99,15 +97,34 @@ async function serveStatic(res, pathname) {
   }
 }
 
-createServer(async (req, res) => {
-  const url = new URL(req.url ?? '/', `http://${req.headers.host ?? '127.0.0.1'}`)
-  try {
-    if (url.pathname === '/local/projects') await projectsHandler(req, res)
-    else if (url.pathname === '/api' || url.pathname.startsWith('/api/')) await proxy(req, res, url)
-    else await serveStatic(res, url.pathname)
-  } catch (error) {
-    fail(res, 500, error.message)
-  }
-}).listen(PORT, '127.0.0.1', () => {
-  console.log(`engram-web on http://127.0.0.1:${PORT}  (api -> ${ENGRAM_URL})`)
-})
+/**
+ * Builds the handler without listening, so a check can start it on an ephemeral port against
+ * a fake upstream. Every default is the value the program has always used, so the caller
+ * overrides only what it needs.
+ *
+ * @param {{ dist?: string, engramUrl?: string, token?: string, projectsHandler?: Function }} [options]
+ */
+export function createEngramWebServer({
+  dist = DIST,
+  engramUrl = ENGRAM_URL,
+  token = TOKEN,
+  projectsHandler = createProjectsHandler(),
+} = {}) {
+  return createServer(async (req, res) => {
+    const url = new URL(req.url ?? '/', `http://${req.headers.host ?? '127.0.0.1'}`)
+    try {
+      if (url.pathname === '/local/projects') await projectsHandler(req, res)
+      else if (url.pathname === '/api' || url.pathname.startsWith('/api/')) await proxy(req, res, url, { engramUrl, token })
+      else await serveStatic(res, url.pathname, dist)
+    } catch (error) {
+      fail(res, 500, error.message)
+    }
+  })
+}
+
+// Entry point: importing this module must never bind a port.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  createEngramWebServer().listen(PORT, '127.0.0.1', () => {
+    console.log(`engram-web on http://127.0.0.1:${PORT}  (api -> ${ENGRAM_URL})`)
+  })
+}

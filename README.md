@@ -43,6 +43,7 @@ npm run typecheck      # vue-tsc, sin emitir
 npm run smoke          # lectura contra el runtime vivo
 npm run check:writes   # mutaciones sin red: método, ruta y cuerpo
 npm run check:projects # inventario de proyectos sin red ni procesos
+npm run check:server   # servidor de producción sin red externa ni procesos
 npm run build          # typecheck + build de producción
 ```
 
@@ -50,6 +51,10 @@ npm run build          # typecheck + build de producción
 intercepta `fetch`, así que verifica el camino de escritura sin tocar la memoria
 real. `check:projects` no necesita el runtime y no lanza ningún proceso: parsea un
 ciclo MCP capturado e intercepta `fetch` para revisar la llamada del cliente.
+`check:server` levanta el servidor de producción en un puerto efímero con un
+runtime de mentira local y un directorio de artefactos temporal, así que comprueba
+el proxy `/api/*`, el fallback de la SPA y `/local/projects` sin abrir el 7437 ni
+el 7438 y sin lanzar nunca el binario `engram`.
 
 ## Variables de entorno
 

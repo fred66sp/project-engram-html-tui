@@ -31,6 +31,12 @@
 - Comprobaciones ejecutables: `npm run smoke`, que lee del runtime vivo, `npm run check:writes`,
   que verifica método, ruta y cuerpo de cada mutación sin usar la red, y `npm run check:projects`,
   que ejercita el inventario sin red y sin lanzar ningún proceso.
+- `npm run check:server` ejercita el servidor de producción sin red externa: levanta
+  `server/server.mjs` en un puerto efímero contra un runtime de mentira y un directorio de
+  artefactos temporal, y verifica el proxy `/api/*`, el fallback de la SPA y la ruta
+  `/local/projects`. Nunca abre el 7437 ni el 7438 y nunca lanza el binario `engram`. Para poder
+  levantarlo, `server/server.mjs` exporta la fábrica `createEngramWebServer(options)` y solo
+  escucha cuando se ejecuta como programa principal.
 
 ### Notas
 
