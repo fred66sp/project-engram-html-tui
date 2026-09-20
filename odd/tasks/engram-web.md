@@ -81,10 +81,10 @@ duplicate_count, last_seen_at, created_at, updated_at, pinned?}`.
 | --- | --- | --- |
 | 1 | Scaffold Vite + Vue 3 + TS, proxy de desarrollo y `server/server.mjs` (estático + proxy `/api`) | hecho — commit fb8f44f |
 | 2 | Cliente API tipado (`src/api/`) con tipos y manejo de errores | hecho |
-| 3 | Shell de UI: layout, navegación, selector de proyecto/scope/tipo y estado global de filtros | pendiente |
-| 4 | Dashboard: stats, proyectos y resumen de `doctor` | pendiente |
+| 3 | Shell de UI: layout, navegación, selector de proyecto/scope/tipo y estado global de filtros | hecho |
+| 4 | Dashboard: stats, proyectos y resumen de `doctor` | hecho |
 | 5 | Búsqueda: `q`, tipo, scope, proyecto y `match_mode`, con `rank` visible | pendiente |
-| 6 | Recientes + detalle de observación: markdown saneado, metadatos y enlace a timeline | pendiente |
+| 6 | Recientes + detalle de observación: markdown saneado, metadatos y enlace a timeline | hecho |
 | 7 | Timeline con `project` explícito de la observación focal | pendiente |
 | 8 | Sesiones y prompts: listado de sesiones, metadatos de sesión y prompts recientes | pendiente |
 | 9 | Review y conflictos: cola de revisión, relaciones y estadísticas | pendiente |
@@ -95,3 +95,36 @@ duplicate_count, last_seen_at, created_at, updated_at, pinned?}`.
 - Las tareas se cierran con un commit de unidad de trabajo en `feature/engram-web` (autorización de
   commits según `CONTRATO_FLUJO_GIT_VERSIONADO.md`).
 - (pendiente) Commits por tarea.
+
+### Verificación mecánica (2026-09-20)
+
+- `npm run typecheck` → exit 0.
+- `npm run build` → exit 0. Salida emitida: `dist/index.html` 0.39 kB,
+  `dist/assets/index-8sGq3gWY.css` 4.54 kB (gzip 1.43 kB), `dist/assets/index-E4QxSJbv.js`
+  174.31 kB (gzip 62.99 kB).
+- `npm run smoke` → exit 0 contra el runtime vivo: engram 2.0.0, 666 observaciones en 18
+  proyectos, `getDoctor()` ok con 9 chequeos.
+- Smoke de producción a través del proxy (`npm start`, puerto 7438): `GET /` → 200,
+  `GET /observations/1188` → 200 (fallback SPA), `GET /api/stats?all_projects=true` → JSON con
+  `total_observations` (666) y `projects` (18). Servidor detenido después.
+- Post-proceso de enlaces de `MarkdownView` verificado sobre la salida real de `marked`:
+  `https://` y `http://` reciben `target="_blank"` + `rel="noopener noreferrer"`; los enlaces
+  relativos y `mailto:` quedan intactos. La primera versión del regex corrompía el `href`; corregido
+  y re-verificado.
+
+### Alcance cerrado en la tarea 6
+
+La tarea 6 se cierra por lo entregado en esta unidad: listado de recientes y detalle de
+observación con markdown saneado y metadatos. El **enlace a timeline** queda diferido a la tarea 7:
+la ruta `/timeline` no existe todavía y este proyecto prohíbe registrar enlaces muertos.
+
+### Verificación visual pendiente del humano
+
+No hubo navegador disponible, por lo que falta comprobar en uno:
+
+- Layout en rejilla (header, sidebar, barra de filtros, contenido) y foco visible al tabular.
+- Chip de estado con `engram v2.0.0` y comportamiento del botón «Reintentar» con el runtime caído.
+- Filtros: que cambiar proyecto/scope dispare recarga y que el filtro por tipo de recientes filtre
+  en cliente sobre la página cargada.
+- Markdown: tablas, bloques de código y que un enlace externo abra en pestaña nueva.
+- Estados de carga, vacío y error en recientes y detalle.
