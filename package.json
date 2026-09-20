@@ -1,0 +1,26 @@
+{
+  "name": "engram-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Web UI for the local Engram memory runtime (engram serve HTTP API)",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "typecheck": "vue-tsc --noEmit",
+    "preview": "vite preview",
+    "start": "node server/server.mjs"
+  },
+  "dependencies": {
+    "dompurify": "^3.4.15",
+    "marked": "^18.0.13",
+    "vue": "^3.5.43",
+    "vue-router": "^5.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.9",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.0",
+    "vue-tsc": "^3.3.11"
+  }
+}

@@ -1,0 +1,30 @@
+# Estado de herramientas locales: no se versiona
+.codegraph/
+.tacks/
+tk.exe
+
+# Caché y temporales de Go dentro del workspace
+# (el sandbox no deja escribir en la caché del sistema)
+.gocache/
+.gotmp/
+
+# Artefactos de compilación
+/youtube-transcript-cli/*.exe
+/ytx-cli
+/ytx-cli.exe
+*.test
+
+# Entornos de Python y cachés
+__pycache__/
+*.pyc
+
+# Herramientas de referencia y reglas locales: no se versionan
+.claude/
+web-fetch-free/
+youtube-transcript-free/
+# Local Pi runtime state
+.atl/
+
+# engram-web
+node_modules/
+dist/

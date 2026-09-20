@@ -1,0 +1,38 @@
+:root {
+  --bg: #0d1117;
+  --panel: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --muted: #8b949e;
+  --accent: #7aa2f7;
+  --ok: #3fb950;
+  --bad: #f85149;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.55 ui-monospace, SFMono-Regular, "Cascadia Mono", Consolas, monospace;
+}
+
+a {
+  color: var(--accent);
+}
+
+.boot {
+  padding: 32px;
+}
+
+.ok {
+  color: var(--ok);
+}
+
+.bad {
+  color: var(--bad);
+}
