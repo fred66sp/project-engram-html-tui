@@ -186,3 +186,24 @@ legítimamente vacía —en la base del usuario no había ninguna observación c
 la más próxima vencía meses después— y en ese caso la acción queda inalcanzable desde cualquier
 pantalla. La llamada es la misma: `markReviewed` con el proyecto de la observación, o `all_projects`
 cuando no tiene proyecto, y el aviso muestra la fecha real devuelta por el runtime.
+
+## Añadido posterior: sección de ayuda en la aplicación (`/help`)
+
+Se agregó una página de ayuda estática (sin datos, sin interactividad) accesible desde la barra
+lateral y desde la ruta `/help`, con índice por anclas. Cubre: qué es la aplicación, cómo se conecta
+al runtime y por qué el proxy propio es obligatorio, cómo arrancarla con sus variables y sus
+comprobaciones, una entrada por pantalla, el vocabulario de proyecto/scope/tipo/`match_mode`/`rank`,
+qué hace realmente cada acción de escritura, las limitaciones del API local en una tabla y los
+avisos de lectura.
+
+Motivo: varias conductas del conjunto no son evidentes desde la interfaz y se explican igual en cada
+vista, o directamente no se explican en ninguna. Las tres que justifican la página son:
+
+1. El pin se escribe pero **no se lee de vuelta**, así que el botón vuelve a «Fijar» tras recargar.
+2. La cola de Review puede estar **legítimamente vacía**, porque solo lista lo que tiene la revisión
+   vencida; por eso «Marcar revisada» también vive en el detalle.
+3. El borrado es suave pero **no tiene deshacer**: el runtime no expone restauración.
+
+Archivos: `src/views/HelpView.vue` (página), `src/router.ts` (ruta), `src/components/AppLayout.vue`
+(entrada «Ayuda»), `src/styles.css` (ancho de lectura, índice, tablas y notas) y `README.md`
+(puntero a `/help`).

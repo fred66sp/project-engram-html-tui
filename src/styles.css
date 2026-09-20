@@ -635,3 +635,65 @@ code {
   border-radius: 6px;
   color: var(--text);
 }
+
+/* In-app help: one reading column, anchor list, section rhythm and two note styles.
+   Tables reuse `.checks`; nothing here is specific to a single section. */
+.help {
+  max-width: 780px;
+}
+
+.help-toc {
+  margin: 0 0 24px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.help-toc ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+
+.help-section {
+  margin-bottom: 30px;
+}
+
+.help-section h2 {
+  margin: 0 0 8px;
+  font-size: 16px;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--text);
+}
+
+.help-section h3 {
+  margin: 14px 0 6px;
+  font-size: 13px;
+}
+
+.help-section p {
+  margin: 0 0 10px;
+}
+
+.help-section ul {
+  margin: 0 0 10px;
+  padding-left: 20px;
+}
+
+.help table.checks {
+  margin: 8px 0 14px;
+}
+
+.help-note {
+  padding: 10px 12px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+}
+
+.help-note-warn {
+  border-color: var(--bad);
+  border-style: solid;
+  color: var(--text);
+}

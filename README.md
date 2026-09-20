@@ -60,3 +60,10 @@ cabeceras CORS y responde 405 a las peticiones `OPTIONS`, por lo que el
 navegador no puede invocarlo de forma directa entre orígenes. Todas las
 llamadas salen hacia `/api/*` en el mismo origen y las reescribe el servidor
 propio (Vite en desarrollo, `server/server.mjs` en producción).
+
+## Ayuda dentro de la aplicación
+
+La ruta `/help` abre la página de ayuda: qué es la aplicación, cómo se conecta
+al runtime, cómo arrancarla y qué comprueba cada script, qué hace cada pantalla,
+el vocabulario de proyectos, scopes y filtros, qué hace exactamente cada acción
+de escritura, las limitaciones conocidas del API local y los avisos de lectura.
