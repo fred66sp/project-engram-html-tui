@@ -2,7 +2,7 @@
 // No Pinia on purpose: three read views do not justify a store.
 import { reactive, ref } from 'vue'
 import { ApiError, getHealth, getStats } from '../api/client'
-import type { Health, Scope } from '../api/types'
+import type { Health, Scope, Stats } from '../api/types'
 
 export interface Filters {
   /** Empty string means "all projects" (the runtime default is its own cwd project). */
@@ -18,6 +18,18 @@ export const filters = reactive<Filters>({ project: '', scope: '', type: '' })
 export const projects = ref<string[]>([])
 export const health = ref<Health | null>(null)
 export const runtimeError = ref('')
+
+/**
+ * Single owner of the `GET /stats` result: the header selector and the dashboard cards both
+ * need it, and they mount in the same tick, so they must share one request and one result.
+ */
+export const stats = ref<Stats | null>(null)
+export const statsLoading = ref(false)
+/**
+ * Kept apart from `runtimeError` on purpose: `loadHealth()` clears `runtimeError` on success,
+ * which would erase a `/stats` failure the dashboard still has to show.
+ */
+export const statsError = ref('')
 
 /** Single place that turns a thrown client error into readable copy for the UI. */
 export function describeError(cause: unknown): string {
@@ -43,16 +55,39 @@ export async function loadHealth(): Promise<void> {
   }
 }
 
+/** In-flight `/stats` request; held only while one is open. */
+let statsRequest: Promise<void> | null = null
+
 /**
- * Fills the project selector. `/stats` is the only source: the runtime exposes no
- * dedicated project-list endpoint, and `projects` there is just an array of names.
+ * Single owner of `/stats`. Also fills the project selector (`/stats` is the only source of
+ * project names: the runtime exposes no dedicated project-list endpoint). The in-flight request
+ * is cached, so a second caller arriving before it settles awaits the same promise and no
+ * second socket is opened.
  */
-export async function loadProjects(): Promise<void> {
-  try {
-    const stats = await getStats({ allProjects: true })
-    projects.value = stats.projects ?? []
-  } catch (cause) {
-    projects.value = []
-    runtimeError.value = describeError(cause)
-  }
+export function loadStats(): Promise<void> {
+  if (statsRequest) return statsRequest
+  statsLoading.value = true
+  statsError.value = ''
+  statsRequest = (async () => {
+    try {
+      const result = await getStats({ allProjects: true })
+      stats.value = result
+      projects.value = result.projects ?? []
+    } catch (cause) {
+      const message = describeError(cause)
+      stats.value = null
+      projects.value = []
+      statsError.value = message
+      runtimeError.value = message
+    } finally {
+      statsLoading.value = false
+      statsRequest = null
+    }
+  })()
+  return statsRequest
+}
+
+/** Kept for the shell's mount: the selector is filled by the same single `/stats` call. */
+export function loadProjects(): Promise<void> {
+  return loadStats()
 }

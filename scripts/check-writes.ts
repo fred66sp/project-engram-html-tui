@@ -313,6 +313,31 @@ await check('judgeRelation(confidence 1.5) -> rejected before sending, zero requ
   assert.equal(calls.length, 0, `an out-of-range confidence reached the network: ${JSON.stringify(calls)}`)
 })
 
+// ---- Phase 5 (hardening): the shared project/all_projects invariant ----
+
+await check('projectFilter("task-prueba") -> {project} only, no allProjects', () => {
+  reset({})
+  assert.deepEqual(api.projectFilter('task-prueba'), { project: 'task-prueba' })
+  assert.equal(calls.length, 0, `a pure helper reached the network: ${JSON.stringify(calls)}`)
+})
+
+await check('projectFilter("") -> {allProjects: true} only, no project', () => {
+  reset({})
+  assert.deepEqual(api.projectFilter(''), { allProjects: true })
+  assert.equal(calls.length, 0, `a pure helper reached the network: ${JSON.stringify(calls)}`)
+})
+
+await check('projectFilter never sets project and allProjects together', () => {
+  reset({})
+  for (const project of ['task-prueba', '', 'otro-proyecto']) {
+    const options = api.projectFilter(project)
+    assert.ok(
+      !('project' in options && 'allProjects' in options),
+      `both keys travelled for ${JSON.stringify(project)}: ${JSON.stringify(options)}`,
+    )
+  }
+})
+
 if (failures > 0) {
   console.error(`check:writes: FAILED (${failures} case(s))`)
   process.exit(1)

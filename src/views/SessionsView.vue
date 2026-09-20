@@ -6,6 +6,7 @@ import {
   getRecentPrompts,
   getRecentSessions,
   getSession,
+  projectFilter,
   searchPrompts,
 } from '../api/client'
 import type { Prompt, Session, SessionSummary } from '../api/types'
@@ -36,8 +37,7 @@ async function loadSessions(): Promise<void> {
   sessionsError.value = ''
   try {
     sessions.value = await getRecentSessions({
-      // Never send `project` and `all_projects` together: the client enforces the invariant.
-      ...(filters.project ? { project: filters.project } : { allProjects: true }),
+      ...projectFilter(filters.project),
       limit: limit.value,
     })
   } catch (cause) {
@@ -70,7 +70,7 @@ async function loadRecentPrompts(): Promise<void> {
   promptsError.value = ''
   try {
     prompts.value = await getRecentPrompts({
-      ...(filters.project ? { project: filters.project } : { allProjects: true }),
+      ...projectFilter(filters.project),
       limit: limit.value,
     })
     promptsSearched.value = false
@@ -96,7 +96,7 @@ async function runPromptSearch(): Promise<void> {
     prompts.value = await searchPrompts({
       q: query,
       limit: limit.value,
-      ...(filters.project ? { project: filters.project } : { allProjects: true }),
+      ...projectFilter(filters.project),
     })
     promptsSearched.value = true
   } catch (cause) {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { getConflictStats, getConflicts, judgeRelation, RELATION_VERBS } from '../api/client'
+import { getConflictStats, getConflicts, judgeRelation, projectFilter, RELATION_VERBS } from '../api/client'
 import type { ConflictList, ConflictStats, ConflictRelation, RelationVerb } from '../api/types'
 import { describeError, filters, formatDate } from '../state/app-state'
 
@@ -133,9 +133,7 @@ const canNext = computed(() => {
 async function loadStats(): Promise<void> {
   statsError.value = ''
   try {
-    stats.value = await getConflictStats(
-      filters.project ? { project: filters.project } : { allProjects: true },
-    )
+    stats.value = await getConflictStats(projectFilter(filters.project))
   } catch (cause) {
     stats.value = null
     statsError.value = describeError(cause)
@@ -147,8 +145,7 @@ async function load(): Promise<void> {
   error.value = ''
   try {
     list.value = await getConflicts({
-      // Never send `project` and `all_projects` together: the client enforces the invariant.
-      ...(filters.project ? { project: filters.project } : { allProjects: true }),
+      ...projectFilter(filters.project),
       limit: limit.value,
       offset: offset.value,
       status: status.value,

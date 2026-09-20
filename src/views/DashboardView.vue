@@ -1,15 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { getCurrentProject, getDoctor, getExport, getStats } from '../api/client'
-import type { CurrentProject, DoctorReport, Stats } from '../api/types'
-import { describeError, filters } from '../state/app-state'
+import { getCurrentProject, getDoctor, getExport, projectFilter } from '../api/client'
+import type { CurrentProject, DoctorReport } from '../api/types'
+import { describeError, filters, loadStats, stats, statsError, statsLoading } from '../state/app-state'
 
 const router = useRouter()
-
-const stats = ref<Stats | null>(null)
-const loading = ref(true)
-const error = ref('')
 
 const doctor = ref<DoctorReport | null>(null)
 const doctorError = ref('')
@@ -21,19 +17,6 @@ const exportError = ref('')
 const exportNotice = ref('')
 
 const projectCount = computed(() => stats.value?.projects?.length ?? 0)
-
-async function loadStats(): Promise<void> {
-  loading.value = true
-  error.value = ''
-  try {
-    stats.value = await getStats({ allProjects: true })
-  } catch (cause) {
-    stats.value = null
-    error.value = describeError(cause)
-  } finally {
-    loading.value = false
-  }
-}
 
 /**
  * `/doctor` is resolved against the server process cwd when no project is given, so it is
@@ -82,7 +65,7 @@ async function downloadExport(): Promise<void> {
   exportError.value = ''
   exportNotice.value = ''
   try {
-    const data = await getExport(filters.project ? { project: filters.project } : { allProjects: true })
+    const data = await getExport(projectFilter(filters.project))
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
@@ -111,8 +94,8 @@ watch(() => filters.project, loadDoctor)
   <div>
     <h1>Dashboard</h1>
 
-    <p v-if="loading" class="state">Cargando estadísticas…</p>
-    <p v-else-if="error" class="state bad">{{ error }}</p>
+    <p v-if="statsLoading" class="state">Cargando estadísticas…</p>
+    <p v-else-if="statsError" class="state bad">{{ statsError }}</p>
 
     <template v-else-if="stats">
       <section class="tiles" aria-label="Totales globales">

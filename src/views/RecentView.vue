@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { getRecentObservations } from '../api/client'
+import { getRecentObservations, projectFilter } from '../api/client'
 import type { Observation } from '../api/types'
 import ObservationCard from '../components/ObservationCard.vue'
 import { describeError, filters } from '../state/app-state'
@@ -17,8 +17,7 @@ async function load(): Promise<void> {
   error.value = ''
   try {
     observations.value = await getRecentObservations({
-      // Never send `project` and `all_projects` together: the client enforces the invariant.
-      ...(filters.project ? { project: filters.project } : { allProjects: true }),
+      ...projectFilter(filters.project),
       scope: filters.scope,
       limit: limit.value,
     })

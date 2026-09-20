@@ -6,6 +6,7 @@ import {
   deleteObservation,
   getObservation,
   markReviewed,
+  projectFilter,
   setObservationPin,
   updateObservation,
 } from '../api/client'
@@ -192,7 +193,7 @@ async function markReviewedNow(): Promise<void> {
   try {
     const result = await markReviewed(
       current.id,
-      current.project ? { project: current.project } : { allProjects: true },
+      projectFilter(current.project ?? ''),
     )
     notice.value = result.review_after
       ? `Marcada como revisada. Su próxima revisión local queda anclada en ${result.review_after}.`

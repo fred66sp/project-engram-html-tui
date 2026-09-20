@@ -92,6 +92,17 @@ function projectParams(options?: ProjectReadOptions): Params {
   return { project: options.project }
 }
 
+/**
+ * The single site of the project-selection invariant for the views: the runtime resolves the
+ * current project from the server process cwd, so `project` and `all_projects=true` must never
+ * travel together. An empty `project` means "all projects"; only one of the two keys is ever
+ * set, and `projectParams` above keeps enforcing the same rule for callers that pass options
+ * directly.
+ */
+export function projectFilter(project: string): ProjectReadOptions {
+  return project ? { project } : { allProjects: true }
+}
+
 async function request<T>(path: string, params?: Params, init?: RequestInit, base = BASE): Promise<T> {
   const url = `${base}${path}${toQuery(params)}`
 

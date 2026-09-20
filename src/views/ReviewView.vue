@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue'
-import { ApiError, getReviewQueue, markReviewed as markReviewedRequest } from '../api/client'
+import { ApiError, getReviewQueue, markReviewed as markReviewedRequest, projectFilter } from '../api/client'
 import type { Observation, ReviewList } from '../api/types'
 import ObservationCard from '../components/ObservationCard.vue'
 import { describeError, filters } from '../state/app-state'
@@ -17,11 +17,6 @@ const markingId = ref<number | null>(null)
 const notice = ref('')
 const actionError = ref('')
 
-/** Same invariant as the queue read: never send `project` and `all_projects` together. */
-function queueFilter(): { project: string } | { allProjects: true } {
-  return filters.project ? { project: filters.project } : { allProjects: true }
-}
-
 async function load(): Promise<void> {
   loading.value = true
   error.value = ''
@@ -29,7 +24,7 @@ async function load(): Promise<void> {
   notice.value = ''
   actionError.value = ''
   try {
-    queue.value = await getReviewQueue({ ...queueFilter(), limit: limit.value })
+    queue.value = await getReviewQueue({ ...projectFilter(filters.project), limit: limit.value })
   } catch (cause) {
     queue.value = null
     error.value = describeError(cause)
@@ -48,7 +43,7 @@ async function markReviewed(observation: Observation): Promise<void> {
   notice.value = ''
   actionError.value = ''
   try {
-    await markReviewedRequest(observation.id, queueFilter())
+    await markReviewedRequest(observation.id, projectFilter(filters.project))
     await load()
     notice.value = `Observación #${observation.id} «${observation.title}» marcada como revisada. Esto reinicia el ciclo local de revisión de esa observación.`
   } catch (cause) {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue'
-import { searchObservations } from '../api/client'
+import { projectFilter, searchObservations } from '../api/client'
 import type { Scope, SearchResult } from '../api/types'
 import ObservationCard from '../components/ObservationCard.vue'
 import { describeError, filters } from '../state/app-state'
@@ -39,8 +39,7 @@ async function runSearch(): Promise<void> {
       scope: scope.value,
       limit: limit.value,
       matchMode: matchMode.value,
-      // The client forbids sending `project` and `all_projects` together.
-      ...(filters.project ? { project: filters.project } : { allProjects: true }),
+      ...projectFilter(filters.project),
     })
   } catch (cause) {
     results.value = []
