@@ -12,6 +12,7 @@
     "smoke": "node scripts/smoke-api.ts",
     "check:writes": "node scripts/check-writes.ts",
     "check:projects": "node scripts/check-projects.ts",
+    "check:commands": "node scripts/check-commands.ts",
     "check:server": "node scripts/check-server.ts",
     "start": "node server/server.mjs"
   },

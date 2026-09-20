@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import CommandsView from './views/CommandsView.vue'
 import ConflictsView from './views/ConflictsView.vue'
 import DashboardView from './views/DashboardView.vue'
 import HelpView from './views/HelpView.vue'
@@ -25,6 +26,7 @@ export const router = createRouter({
     { path: '/conflicts', name: 'conflicts', component: ConflictsView },
     { path: '/new', name: 'new-memory', component: NewMemoryView },
     { path: '/projects', name: 'projects', component: ProjectsView },
+    { path: '/commands', name: 'commands', component: CommandsView },
     { path: '/help', name: 'help', component: HelpView },
   ],
 })

@@ -21,6 +21,7 @@ import { filters, health, loadHealth, projects, runtimeError } from '../state/ap
       <RouterLink to="/conflicts" active-class="is-active">Conflictos</RouterLink>
       <RouterLink to="/new" active-class="is-active">Nueva memoria</RouterLink>
       <RouterLink to="/projects" active-class="is-active">Proyectos</RouterLink>
+      <RouterLink to="/commands" active-class="is-active">Comandos</RouterLink>
       <RouterLink to="/help" active-class="is-active">Ayuda</RouterLink>
     </nav>
 
