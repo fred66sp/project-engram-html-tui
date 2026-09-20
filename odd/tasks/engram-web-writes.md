@@ -56,16 +56,19 @@ deshacer.
 | 3 | Detalle de observación: pin, formulario de edición con resumen de cambios y guardado | hecho |
 | 4 | Borrado suave con diálogo de confirmación fuerte (id exacto) y salida a Recientes | hecho |
 | 5 | Export desde el dashboard como descarga de fichero | hecho |
-| 6 | Verificación: build, typecheck, check de escritura y verificación independiente | pendiente |
+| 6 | Verificación: build, typecheck, check de escritura y verificación independiente | hecho — copia aislada, runtime real intacto |
 
 ## Evidencia
 
 - Los commits de esta fase se autorizan y registran por unidad de trabajo, según
   `CONTRATO_FLUJO_GIT_VERSIONADO.md`.
+- Commits de la fase: `0f41454` (cliente de escritura, comprobación sin red, pin, edición, borrado y
+  export) y `ce95d76` (CHANGELOG). Integración posterior en `main`: `f4bf39c` (contrato operativo y
+  `.gitattributes`) y `cebf303` (exportes ignorados).
 
 ### Verificación mecánica (tareas 1–5)
 
-Ejecutada sobre el árbol de trabajo de esta unidad (sin commits, sin staging):
+Ejecutada sobre el árbol de trabajo de esta unidad, antes de crear sus commits:
 
 - `npm run typecheck` → exit 0 (sin salida de errores).
 - `npm run build` → exit 0. Salida emitida: `dist/index.html` 0.39 kB (gzip 0.26 kB),

@@ -1,8 +1,9 @@
 # Engram Web
 
 UI web sobre el runtime local de memoria Engram (`engram serve`, API JSON en
-`http://127.0.0.1:7437`). Esta primera versión es de solo lectura: consultar,
-buscar y leer memorias.
+`http://127.0.0.1:7437`). Permite consultar, buscar y leer memorias, y además
+operaciones de escritura controladas: fijar o quitar el pin, editar campos,
+borrar de forma suave con confirmación por identificador y descargar un export.
 
 ## Requisitos
 
@@ -30,6 +31,19 @@ npm start
 `npm run build` genera `dist/` y `npm start` levanta el servidor de producción
 en `http://127.0.0.1:7438`. Ese servidor sirve los archivos estáticos con
 fallback de SPA y actúa como proxy de `/api/*` hacia el runtime.
+
+## Comprobaciones
+
+```bash
+npm run typecheck     # vue-tsc, sin emitir
+npm run smoke         # lectura contra el runtime vivo
+npm run check:writes  # mutaciones sin red: método, ruta y cuerpo
+npm run build         # typecheck + build de producción
+```
+
+`smoke` necesita el runtime escuchando en 7437 y no modifica nada. `check:writes`
+intercepta `fetch`, así que verifica el camino de escritura sin tocar la memoria
+real.
 
 ## Variables de entorno
 

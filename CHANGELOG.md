@@ -27,6 +27,7 @@
 - El runtime no devuelve el estado del pin al leer una observación, así que la interfaz avisa de que
   no puede comprobarlo de vuelta tras recargar.
 - Carencias conocidas del API: no hay detalle de sesión por HTTP, no hay paginación por offset en
-  observaciones ni prompts, el filtro por tipo solo existe en la búsqueda, y las relaciones de
+  observaciones ni prompts, el filtro por tipo solo existe en la búsqueda, las relaciones de
   conflicto se identifican con `sync_id` en lugar de los identificadores numéricos que necesita la
-  vista de detalle.
+  vista de detalle, `/stats` no expone contadores por proyecto, y la gestión de proyectos, la
+  configuración de agentes y la sincronización con la nube siguen fuera de la interfaz.
