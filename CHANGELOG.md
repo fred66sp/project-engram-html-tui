@@ -44,6 +44,10 @@
   tablas de arranque y comprobaciones; la página no ejecuta nada.
 - `npm run check:commands`, que comprueba el catálogo sin red ni procesos: ids únicos, entradas
   completas y ningún texto de comando repetido.
+- La barra de filtros de la interfaz ahora solo se renderiza en las pantallas que usan los filtros
+  (Recientes, Búsqueda, Sesiones, Review, Conflictos, Panel y Nueva memoria); en Comandos,
+  Proyectos, Ayuda, el detalle de observación y el timeline se oculta, porque ahí no filtraba nada.
+  Cada ruta que no los usa lo declara con `meta: { filters: false }`.
 
 ### Notas
 

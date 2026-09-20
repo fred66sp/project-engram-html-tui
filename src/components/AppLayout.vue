@@ -1,6 +1,16 @@
 <script setup lang="ts">
-import { RouterLink } from 'vue-router'
+import { computed } from 'vue'
+import { RouterLink, useRoute } from 'vue-router'
 import { filters, health, loadHealth, projects, runtimeError } from '../state/app-state'
+
+const route = useRoute()
+
+/**
+ * The filter bar belongs to the views that read the shared filters; the routes that would only
+ * decorate themselves with it opt out with `meta: { filters: false }`, so the shell never shows
+ * a control that would do nothing.
+ */
+const showFilters = computed(() => route.meta.filters !== false)
 </script>
 
 <template>
@@ -25,7 +35,7 @@ import { filters, health, loadHealth, projects, runtimeError } from '../state/ap
       <RouterLink to="/help" active-class="is-active">Ayuda</RouterLink>
     </nav>
 
-    <section class="filter-bar" aria-label="Filtros de lectura">
+    <section v-if="showFilters" class="filter-bar" aria-label="Filtros de lectura">
       <div class="field">
         <label for="filter-project">Proyecto</label>
         <select id="filter-project" v-model="filters.project">
