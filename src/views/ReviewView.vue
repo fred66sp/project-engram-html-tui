@@ -90,11 +90,11 @@ watch(() => [filters.project, limit.value], load)
       tarjeta para que al pulsarlo no se navegue al detalle.
     </p>
 
-    <p v-if="actionError" class="state bad">{{ actionError }}</p>
-    <p v-else-if="notice" class="state ok">{{ notice }}</p>
+    <p v-if="actionError" class="state bad" role="alert">{{ actionError }}</p>
+    <p v-else-if="notice" class="state ok" role="status">{{ notice }}</p>
 
     <p v-if="loading" class="state">Cargando cola de revisión…</p>
-    <p v-else-if="error" class="state bad">{{ error }}</p>
+    <p v-else-if="error" class="state bad" role="alert">{{ error }}</p>
     <p v-else-if="!queue || queue.observations.length === 0" class="state">
       No hay observaciones pendientes de revisión.
     </p>

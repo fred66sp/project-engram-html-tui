@@ -14,6 +14,12 @@ const emit = defineEmits<{ confirm: []; cancel: [] }>()
 
 const typed = ref('')
 const input = ref<HTMLInputElement | null>(null)
+const dialog = ref<HTMLElement | null>(null)
+
+/** Element focused before the dialog opened; focus returns here on unmount. */
+let trigger: HTMLElement | null = null
+
+const FOCUSABLE = 'button, input, select, textarea, a[href]'
 
 /** The destructive button only unlocks on an exact id match. */
 const matches = computed(() => typed.value.trim() === String(props.id))
@@ -24,21 +30,69 @@ function cancel(): void {
   emit('cancel')
 }
 
+/** Enabled, visible focusable descendants of the dialog, in DOM order. */
+function focusable(): HTMLElement[] {
+  const root = dialog.value
+  if (!root) return []
+  return Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
+    (el) => !el.hasAttribute('disabled') && el.getClientRects().length > 0,
+  )
+}
+
+/** Keep Tab inside the modal instead of letting it reach the page behind it. */
+function trapTab(event: KeyboardEvent): void {
+  const items = focusable()
+  // While busy both controls are disabled: hold focus instead of leaking it to BODY.
+  if (items.length === 0) {
+    event.preventDefault()
+    return
+  }
+  const first = items[0]
+  const last = items[items.length - 1]
+  const active = document.activeElement as HTMLElement | null
+  const inside = active !== null && dialog.value?.contains(active) === true
+  if (event.shiftKey) {
+    if (!inside || active === first) {
+      event.preventDefault()
+      last.focus()
+    }
+  } else if (!inside || active === last) {
+    event.preventDefault()
+    first.focus()
+  }
+}
+
 function onKeydown(event: KeyboardEvent): void {
-  if (event.key === 'Escape') cancel()
+  if (event.key === 'Escape') {
+    cancel()
+    return
+  }
+  if (event.key === 'Tab') trapTab(event)
 }
 
 onMounted(() => {
+  trigger = document.activeElement instanceof HTMLElement ? document.activeElement : null
   input.value?.focus()
   window.addEventListener('keydown', onKeydown)
 })
 
-onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKeydown)
+  // Give focus back to the trigger only when it is still reachable; otherwise leave it alone.
+  if (trigger && document.contains(trigger) && typeof trigger.focus === 'function') trigger.focus()
+  trigger = null
+})
 </script>
 
 <template>
   <div class="dialog-backdrop" @click.self="cancel()">
-    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="delete-dialog-title">
+    <div
+      ref="dialog"
+      class="dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="delete-dialog-title"
+    >
       <h2 id="delete-dialog-title" class="dialog-title">Eliminar la observación {{ id }}</h2>
       <p class="dialog-subject">{{ title }}</p>
 

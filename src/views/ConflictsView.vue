@@ -195,7 +195,7 @@ onMounted(() => {
     <section class="section">
       <h2>Estadísticas</h2>
 
-      <p v-if="statsError" class="state bad">{{ statsError }}</p>
+      <p v-if="statsError" class="state bad" role="alert">{{ statsError }}</p>
 
       <template v-else-if="stats">
         <div class="tiles" aria-label="Totales de conflictos">
@@ -281,11 +281,11 @@ onMounted(() => {
         guarda de estado, así que no se conserva el anterior.
       </p>
 
-      <p v-if="verdictError" class="state bad">{{ verdictError }}</p>
-      <p v-else-if="notice" class="state ok">{{ notice }}</p>
+      <p v-if="verdictError" class="state bad" role="alert">{{ verdictError }}</p>
+      <p v-else-if="notice" class="state ok" role="status">{{ notice }}</p>
 
       <p v-if="loading" class="state">Cargando relaciones…</p>
-      <p v-else-if="error" class="state bad">{{ error }}</p>
+      <p v-else-if="error" class="state bad" role="alert">{{ error }}</p>
       <p v-else-if="!list || list.relations.length === 0" class="state">
         No hay relaciones para estos filtros.
       </p>
