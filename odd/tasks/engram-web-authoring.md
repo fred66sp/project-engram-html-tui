@@ -207,3 +207,36 @@ vista, o directamente no se explican en ninguna. Las tres que justifican la pág
 Archivos: `src/views/HelpView.vue` (página), `src/router.ts` (ruta), `src/components/AppLayout.vue`
 (entrada «Ayuda»), `src/styles.css` (ancho de lectura, índice, tablas y notas) y `README.md`
 (puntero a `/help`).
+
+### Ampliación: qué es Engram y cómo se mantiene
+
+Se añadió una segunda sección a la ayuda, «Qué es Engram» (`id="engram"`), entre «Qué es esta
+Aplicación» y «Cómo se conecta», con su entrada correspondiente en el índice. Cubre tres cosas:
+
+- **Qué es**: proyecto de código abierto bajo licencia MIT, agnóstico del agente, un binario de Go
+  sin dependencias; los agentes guardan observaciones estructuradas de forma deliberada y escriben un
+  resumen al cerrar la sesión, sin recolección masiva.
+- **Cómo funciona**: SQLite con FTS5 en `~/.engram/engram.db`; sesiones, observaciones, prompts y
+  relaciones (conflictos con veredicto, cola de revisión por vencimiento); las cuatro superficies
+  (MCP stdio, API HTTP en 7437, CLI y TUI) y la nube opcional solo para proyectos inscritos.
+- **Cómo se mantiene**: el repositorio upstream y sus documentos (`DOCS.md`,
+  `docs/ARCHITECTURE.md`, `docs/INSTALLATION.md`, `docs/RELEASE-POLICY.md`), los tres canales de
+  publicación, el procedimiento deliberado de actualización con copia de seguridad y sin vuelta
+  atrás automática, y `engram --version` / `engram doctor` para comprobar la instalación local.
+
+Motivo: quien use la interfaz debe entender **de dónde sale la memoria** que está viendo y **qué
+implica actualizar Engram**, porque la política de publicación no promete soporte de seguridad en
+todos los canales ni un camino de vuelta automático. La sección separa explícitamente lo que mantiene
+el proyecto upstream de lo que mantiene esta interfaz local, para que nadie confunda la propiedad de
+cada parte.
+
+Todos los datos de la sección se verificaron contra el clon local del upstream en su versión v2.0.0
+(la instalada en esta máquina), sin afirmaciones no documentadas ni cifras volátiles como estrellas,
+incidencias o fechas.
+
+La página deja de ser totalmente estática: dentro de esa sección hay una línea de estado que llama a
+`getHealth()` (una sola lectura, sin escrituras) y muestra `Runtime detectado: engram v<versión>`
+cuando el runtime responde, o un aviso de que el resto de la sección describe la instalación
+prevista y no un estado en vivo cuando no responde. El componente usa refs locales y no el estado
+compartido de `app-state.ts`, y no añade dependencias. Archivos: `src/views/HelpView.vue`,
+`CHANGELOG.md` y esta nota.

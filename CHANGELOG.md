@@ -18,8 +18,10 @@
   borrado suave con confirmación por id y descarga del export desde el panel.
 - Alta y revisión: crear memoria desde el navegador con la sesión manual `manual-save-<proyecto>`,
   marcar una observación como revisada y juzgar relaciones de conflicto.
-- Ayuda integrada en la aplicación (`/help`): qué hace cada pantalla, el vocabulario del runtime, qué
-  hace exactamente cada acción de escritura y las limitaciones conocidas.
+- Ayuda integrada en la aplicación (`/help`): qué es Engram y cómo se mantiene (licencia, canales de
+  publicación y qué implica actualizar), qué hace cada pantalla, el vocabulario del runtime, qué hace
+  exactamente cada acción de escritura y las limitaciones conocidas. La sección de Engram incluye una
+  línea de estado con la versión del runtime que está escuchando.
 - Comprobaciones ejecutables: `npm run smoke`, que lee del runtime vivo, y `npm run check:writes`,
   que verifica método, ruta y cuerpo de cada mutación sin usar la red.
 

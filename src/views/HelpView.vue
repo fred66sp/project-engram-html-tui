@@ -1,6 +1,7 @@
 <!--
-  Static help page: no data fetching and no interactivity on purpose. Every claim below is
-  checkable against the code or against the feature documents in odd/tasks/.
+  Help page: static copy plus one read-only probe of the runtime (its version). Every claim below
+  is checkable against the code, the upstream docs of the installed Engram, or the feature
+  documents in odd/tasks/.
 -->
 <template>
   <div class="help">
@@ -10,6 +11,7 @@
       <strong>Contenido</strong>
       <ul>
         <li><a href="#que-es">Qué es esta aplicación</a></li>
+        <li><a href="#engram">Qué es Engram</a></li>
         <li><a href="#conexion">Cómo se conecta</a></li>
         <li><a href="#arranque">Cómo arrancarla</a></li>
         <li><a href="#pantallas">Las pantallas</a></li>
@@ -31,6 +33,85 @@
         y los agentes de Engram. Lo que ves en pantalla es tu memoria real, y lo que escribes desde
         aquí queda en ella.
       </p>
+    </section>
+
+    <section id="engram" class="help-section">
+      <h2>Qué es Engram</h2>
+      <p>
+        Engram es la memoria de la que vive esta interfaz. Es un proyecto de código abierto bajo
+        licencia MIT, publicado en
+        <a href="https://github.com/Gentleman-Programming/engram">github.com/Gentleman-Programming/engram</a>,
+        y sus autores lo describen como memoria persistente para agentes de programación con IA:
+        agnóstico del agente, un solo binario de Go y sin dependencias. Su sitio es
+        <a href="https://engram.gentlemanprogramming.com/">engram.gentlemanprogramming.com</a>.
+      </p>
+      <p>
+        Cada agente decide qué merece recordarse: no hay recolección masiva ni automática de
+        llamadas a herramientas. El agente guarda observaciones estructuradas (título, tipo,
+        contenido) cuando termina algo significativo y, al cerrar la sesión, suele escribir un
+        resumen.
+      </p>
+
+      <h3>Cómo funciona</h3>
+      <p>
+        Los datos viven en SQLite con índice de texto completo FTS5, en
+        <code>~/.engram/engram.db</code> de esta máquina; al lado hay una carpeta
+        <code>backups</code>.
+      </p>
+      <p>
+        El vocabulario del almacén es: sesiones, observaciones, prompts y relaciones entre
+        observaciones. Los conflictos se detectan por relaciones y se resuelven con un veredicto, y
+        las observaciones entran en una cola de revisión cuando su fecha de revisión vence.
+      </p>
+      <p>
+        Engram expone cuatro superficies: servidor MCP por stdio (lo que usan los agentes), API HTTP
+        local en el puerto 7437, línea de comandos e interfaz de terminal. Existe además un runtime
+        en la nube opcional, con sincronización solo para los proyectos que se inscriben en él; la
+        memoria local funciona sin nube.
+      </p>
+      <p class="help-note">
+        Esta aplicación web <strong>no forma parte del proyecto</strong>: es una interfaz local e
+        independiente que habla con el API HTTP del runtime instalado. Nunca escribe el fichero de
+        la base, todo pasa por ese API. Se desarrolló y verificó contra la versión v2.0.0, así que
+        si el proyecto cambia ese API, esta interfaz puede necesitar ajustes. Dicho de otro modo:
+        Engram y su documentación los mantiene el proyecto upstream; esta interfaz se mantiene
+        aparte.
+      </p>
+
+      <h3>Cómo se mantiene</h3>
+      <p>
+        El repositorio upstream es la fuente de verdad y tiene documentación propia: <code>DOCS.md</code>,
+        <code>docs/ARCHITECTURE.md</code>, <code>docs/INSTALLATION.md</code> y
+        <code>docs/RELEASE-POLICY.md</code>.
+      </p>
+      <p>
+        Su política de publicación define tres canales:
+      </p>
+      <ul>
+        <li>La última versión estable: la recomendada, y la que recibe correcciones de seguridad.</li>
+        <li>Las candidatas a versión (prerelease): para validación, sin soporte de seguridad garantizado.</li>
+        <li>Las versiones antiguas: sin correcciones de seguridad.</li>
+      </ul>
+      <p>
+        Actualizar es una decisión deliberada: elegir canal, leer las notas de la versión y sus
+        migraciones, <strong>hacer copia de seguridad del estado</strong> antes de tocar nada,
+        validar el entorno y conservar una instalación buena conocida hasta aceptar la nueva. La
+        política no promete un camino de vuelta automático: revertir significa restaurar la versión
+        y la copia de seguridad conocidas.
+      </p>
+      <p>
+        En esta máquina, <code>engram --version</code> dice qué versión está instalada y
+        <code>engram doctor</code> comprueba su estado con un diagnóstico de solo lectura.
+      </p>
+      <p v-if="runtimeReachable === true" class="help-note">
+        Runtime detectado: <code>engram v{{ runtimeVersion }}</code>.
+      </p>
+      <p v-else-if="runtimeReachable === false" class="help-note help-note-warn">
+        El runtime no está accesible en este momento, así que esta sección describe la instalación
+        prevista de Engram, no un estado en vivo. El chip de estado de la cabecera y el botón
+        «Reintentar» muestran la respuesta real.
+      </p>
+      <p v-else class="help-note">Comprobando la versión del runtime…</p>
     </section>
 
     <section id="conexion" class="help-section">
@@ -384,3 +465,22 @@
     </section>
   </div>
 </template>
+
+<script setup lang="ts">
+// The only dynamic part of this page: one read-only probe of the runtime it describes. Local refs
+// on purpose, so the page does not depend on the shell's shared health poll having run.
+import { onMounted, ref } from 'vue'
+import { getHealth } from '../api/client'
+
+const runtimeVersion = ref('')
+const runtimeReachable = ref<boolean | null>(null)
+
+onMounted(async () => {
+  try {
+    runtimeVersion.value = (await getHealth()).version
+    runtimeReachable.value = true
+  } catch {
+    runtimeReachable.value = false
+  }
+})
+</script>
