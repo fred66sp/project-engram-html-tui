@@ -219,13 +219,6 @@ export function getDoctor(project?: string): Promise<DoctorReport> {
   return request<DoctorReport>('/doctor', { project })
 }
 
-export function getContext(options?: ProjectReadOptions & { limit?: number }): Promise<{ context: string }> {
-  return request<{ context: string }>('/context', {
-    ...projectParams(options),
-    limit: options?.limit,
-  })
-}
-
 // ---- Controlled writes (phase 2) ----
 
 /** `PUT` pins, `DELETE` unpins; both return the resulting `{id, pinned}`. */
