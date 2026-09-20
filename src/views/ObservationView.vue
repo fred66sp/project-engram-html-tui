@@ -5,6 +5,7 @@ import {
   ApiError,
   deleteObservation,
   getObservation,
+  markReviewed,
   setObservationPin,
   updateObservation,
 } from '../api/client'
@@ -47,6 +48,9 @@ const draft = reactive<Draft>({ title: '', content: '', type: '', scope: '', top
 
 const pinBusy = ref(false)
 const pinError = ref('')
+
+const reviewBusy = ref(false)
+const reviewError = ref('')
 
 const showDelete = ref(false)
 const deleting = ref(false)
@@ -175,6 +179,31 @@ async function togglePin(): Promise<void> {
   }
 }
 
+/**
+ * Resets this observation's local review cycle. The runtime re-anchors `review_after` six months
+ * ahead, so the response carries the new date rather than a full observation.
+ */
+async function markReviewedNow(): Promise<void> {
+  const current = observation.value
+  if (!current || reviewBusy.value) return
+  reviewBusy.value = true
+  reviewError.value = ''
+  notice.value = ''
+  try {
+    const result = await markReviewed(
+      current.id,
+      current.project ? { project: current.project } : { allProjects: true },
+    )
+    notice.value = result.review_after
+      ? `Marcada como revisada. Su próxima revisión local queda anclada en ${result.review_after}.`
+      : 'Marcada como revisada: se reinició su ciclo local de revisión.'
+  } catch (cause) {
+    reviewError.value = writeFailure('No se pudo marcar como revisada', cause)
+  } finally {
+    reviewBusy.value = false
+  }
+}
+
 async function save(): Promise<void> {
   const current = observation.value
   if (!current || saving.value) return
@@ -292,15 +321,20 @@ watch(() => route.params.id, onRouteChange)
           <button type="button" class="btn" :disabled="loading" @click="toggleEdit()">
             {{ editing ? 'Cancelar edición' : 'Editar campos' }}
           </button>
+          <button type="button" class="btn" :disabled="reviewBusy" @click="markReviewedNow()">
+            {{ reviewBusy ? 'Marcando…' : 'Marcar revisada' }}
+          </button>
           <button type="button" class="btn btn-danger" @click="openDelete()">Eliminar…</button>
           <p class="filter-note">
             El pin es local de este dispositivo. Guardar y eliminar son acciones explícitas: nada se
             envía al salir de un campo. El runtime no devuelve `pinned` al leer una observación, de
-            modo que el estado del pin no se puede comprobar de vuelta desde aquí.
+            modo que el estado del pin no se puede comprobar de vuelta desde aquí. Marcar revisada
+            reinicia el ciclo local de esta observación, que pasa a vencer dentro de seis meses.
           </p>
         </div>
 
         <p v-if="pinError" class="state bad" role="alert">{{ pinError }}</p>
+        <p v-if="reviewError" class="state bad" role="alert">{{ reviewError }}</p>
         <p v-if="notice" class="state ok" role="status">{{ notice }}</p>
 
         <form v-if="editing" class="edit-form" @submit.prevent="save()">

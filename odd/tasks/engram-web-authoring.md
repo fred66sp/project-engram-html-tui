@@ -177,3 +177,12 @@ auténticas) y al terminar se comprobó que el runtime real seguía intacto. Com
 Punto no concluyente: si marcar revisada saca la observación de la cola de `/review` no se pudo
 observar, porque la cola de la copia estaba vacía; lo que sí se comprobó es el mecanismo, con
 `review_after` re-anclado.
+
+### Ajuste posterior a la verificación: la acción también en el detalle
+
+«Marcar revisada» se añadió también a la vista de detalle de la observación, junto a las demás
+acciones explícitas. El motivo es el encontrado al probar la interfaz: la cola de review puede estar
+legítimamente vacía —en la base del usuario no había ninguna observación con `review_after` vencido y
+la más próxima vencía meses después— y en ese caso la acción queda inalcanzable desde cualquier
+pantalla. La llamada es la misma: `markReviewed` con el proyecto de la observación, o `all_projects`
+cuando no tiene proyecto, y el aviso muestra la fecha real devuelta por el runtime.
