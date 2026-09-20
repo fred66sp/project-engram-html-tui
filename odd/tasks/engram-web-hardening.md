@@ -22,7 +22,7 @@ hasta ahora no tenía ninguna.
 | Un solo `GET /stats` en la carga del Dashboard | incluida |
 | Smoke automático de `server/server.mjs` (proxy, fallback SPA, `/local/projects`) | incluida |
 | Subir la puntuación SEO/agentic de Lighthouse (meta description, `robots.txt`, `llms.txt`) | **fuera**: herramienta local sin indexación, perseguirlo sería ruido |
-| Corregir el CLS 0.201 del Dashboard | **fuera de esta fase**: es real, pero exige medir el desplazamiento por elemento antes de tocar estilos. Queda anotado como pendiente |
+| Corregir el CLS 0.201 del Dashboard | **incluida**: esta fila se escribió antes de medir y quedó obsoleta, no era un pendiente real. La corrección, con su causa medida, está en «Correcciones posteriores, en la misma rama» (0.1737 → 0 a 1596×770, más el CLS a pantalla estrecha 0.3093 → 0.0001) |
 | Añadir Vitest o cualquier framework de test | **fuera**: Node 24 ya ejecuta los scripts de comprobación con tipos, y el navegador cubre lo que la lógica de foco necesita |
 
 ## Hechos medidos con `chrome-devtools` MCP (runtime engram v2.0.0, servidor de producción 7438)
