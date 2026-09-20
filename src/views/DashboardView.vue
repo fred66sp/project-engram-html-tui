@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { getCurrentProject, getDoctor, getStats } from '../api/client'
+import { getCurrentProject, getDoctor, getExport, getStats } from '../api/client'
 import type { CurrentProject, DoctorReport, Stats } from '../api/types'
 import { describeError, filters } from '../state/app-state'
 
@@ -15,6 +15,10 @@ const doctor = ref<DoctorReport | null>(null)
 const doctorError = ref('')
 const doctorLoading = ref(false)
 const currentProject = ref<CurrentProject | null>(null)
+
+const exportBusy = ref(false)
+const exportError = ref('')
+const exportNotice = ref('')
 
 const projectCount = computed(() => stats.value?.projects?.length ?? 0)
 
@@ -69,6 +73,32 @@ function openProject(project: string): void {
   router.push('/recent')
 }
 
+/**
+ * Reads only: the export endpoint never mutates the runtime. The file is built in the
+ * browser from the JSON the runtime already returns, so nothing is written anywhere.
+ */
+async function downloadExport(): Promise<void> {
+  exportBusy.value = true
+  exportError.value = ''
+  exportNotice.value = ''
+  try {
+    const data = await getExport(filters.project ? { project: filters.project } : { allProjects: true })
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `engram-export-${new Date().toISOString().slice(0, 10)}.json`
+    link.click()
+    // Revoking synchronously can cancel the download in some browsers.
+    setTimeout(() => URL.revokeObjectURL(url), 0)
+    exportNotice.value = `Descarga iniciada: ${link.download}`
+  } catch (cause) {
+    exportError.value = describeError(cause)
+  } finally {
+    exportBusy.value = false
+  }
+}
+
 onMounted(() => {
   loadStats()
   loadDoctor()
@@ -120,6 +150,22 @@ watch(() => filters.project, loadDoctor)
         </ul>
       </section>
     </template>
+
+    <section class="section">
+      <h2>Export</h2>
+      <div class="toolbar">
+        <button type="button" class="btn" :disabled="exportBusy" @click="downloadExport()">
+          {{ exportBusy ? 'Preparando export…' : 'Descargar export' }}
+        </button>
+        <p class="filter-note">
+          Exporta
+          <strong>{{ filters.project || 'todos los proyectos' }}</strong>
+          a un fichero JSON. Solo lee del runtime y es la copia recomendada antes de borrar algo.
+        </p>
+      </div>
+      <p v-if="exportError" class="state bad" role="alert">{{ exportError }}</p>
+      <p v-else-if="exportNotice" class="state ok" role="status">{{ exportNotice }}</p>
+    </section>
 
     <section class="section">
       <h2>Doctor</h2>

@@ -169,3 +169,41 @@ export interface ProjectReadOptions {
   project?: string
   allProjects?: boolean
 }
+
+// ---- Write payloads (phase 2: controlled writes) ----
+
+/**
+ * Accepted fields of `PATCH /observations/{id}`. Every key is optional because the runtime
+ * rejects an empty patch (`at least one field is required`); undefined keys are never sent.
+ */
+export interface ObservationPatch {
+  title?: string
+  content?: string
+  type?: string
+  project?: string
+  scope?: Scope
+  topic_key?: string
+}
+
+/** Shape returned by `PUT`/`DELETE /observations/{id}/pin`. */
+export interface PinResult {
+  id: number
+  pinned: boolean
+}
+
+/** Shape returned by `DELETE /observations/{id}` (soft delete). */
+export interface DeleteResult {
+  id: number
+  status: string
+  /** Present in the runtime's response only; the client cannot request a permanent deletion. */
+  hard_delete?: boolean
+}
+
+/** Shape returned by `GET /export`. Read-only: this app never imports a payload back. */
+export interface ExportData {
+  version: string
+  exported_at: string
+  sessions: unknown[] | null
+  observations: Observation[] | null
+  prompts: unknown[] | null
+}

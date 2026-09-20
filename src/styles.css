@@ -131,7 +131,8 @@ a {
 }
 
 .field input,
-.field select {
+.field select,
+.field textarea {
   min-width: 160px;
   padding: 5px 8px;
   border: 1px solid var(--border);
@@ -139,6 +140,11 @@ a {
   background: var(--bg);
   color: var(--text);
   font: inherit;
+}
+
+.field textarea {
+  min-width: 0;
+  resize: vertical;
 }
 
 .filter-note {
@@ -173,6 +179,18 @@ a {
 .btn:disabled {
   opacity: 0.5;
   cursor: default;
+}
+
+/* Destructive action: the only place the danger colour is used as a button. */
+.btn-danger {
+  border-color: var(--bad);
+  color: var(--bad);
+}
+
+.btn-danger:hover:not(:disabled) {
+  border-color: var(--bad);
+  background: var(--bad);
+  color: var(--bg);
 }
 
 .chip {
@@ -493,4 +511,102 @@ code {
   padding-bottom: 6px;
   text-align: left;
   font-size: 12px;
+}
+
+/* Edit form: single column for the long fields, two columns for the short ones. */
+.edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.edit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+/* Pre-send summary: only the fields that will travel in the PATCH. */
+.change-summary {
+  padding: 10px 12px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+}
+
+.change-summary h3 {
+  margin: 0 0 6px;
+  font-size: 13px;
+}
+
+.change-summary ul {
+  margin: 0 0 6px;
+  padding-left: 18px;
+}
+
+.change-summary li {
+  overflow-wrap: anywhere;
+}
+
+.change-summary p {
+  margin: 0;
+  font-size: 12px;
+}
+
+/* Soft-delete confirmation: a modal because the action is irreversible. */
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgb(0 0 0 / 60%);
+}
+
+.dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(560px, 100%);
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 16px;
+  border: 1px solid var(--bad);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.dialog-title {
+  margin: 0;
+  font-size: 17px;
+}
+
+.dialog-subject {
+  margin: 0;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.dialog p {
+  margin: 0;
+}
+
+.danger-note {
+  padding: 10px 12px;
+  border: 1px solid var(--bad);
+  border-radius: 6px;
+  color: var(--text);
 }

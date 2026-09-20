@@ -1,4 +1,6 @@
-// Read-only client for the local Engram runtime HTTP API (engram serve, v2.0.0).
+// Typed client for the local Engram runtime HTTP API (engram serve, v2.0.0).
+// Reads are read-only in spirit; the write helpers below are limited to the safe subset:
+// pin/unpin, field PATCH, soft delete (no `hard`) and export download.
 //
 // The SPA always calls `/api/*`; Vite (dev) and server/server.mjs (prod) rewrite it to the
 // runtime origin, so the browser stays same-origin (the runtime sends no CORS headers).
@@ -7,11 +9,15 @@ import type {
   ConflictList,
   ConflictStats,
   CurrentProject,
+  DeleteResult,
   DoctorReport,
+  ExportData,
   Health,
   Observation,
-  Prompt,
+  ObservationPatch,
+  PinResult,
   ProjectReadOptions,
+  Prompt,
   ReviewList,
   Scope,
   SearchResult,
@@ -218,4 +224,47 @@ export function getContext(options?: ProjectReadOptions & { limit?: number }): P
     ...projectParams(options),
     limit: options?.limit,
   })
+}
+
+// ---- Controlled writes (phase 2) ----
+
+/** `PUT` pins, `DELETE` unpins; both return the resulting `{id, pinned}`. */
+export function setObservationPin(id: number, pinned: boolean): Promise<PinResult> {
+  return request<PinResult>(`/observations/${id}/pin`, undefined, {
+    method: pinned ? 'PUT' : 'DELETE',
+  })
+}
+
+/**
+ * Patches only the fields present in the patch: the runtime rejects an empty body with
+ * "at least one field is required", so undefined keys are omitted instead of nulled.
+ */
+export async function updateObservation(id: number, patch: ObservationPatch): Promise<Observation> {
+  const body: Record<string, string> = {}
+  for (const [key, value] of Object.entries(patch as Record<string, string | undefined>)) {
+    if (value !== undefined) body[key] = value
+  }
+  if (Object.keys(body).length === 0) {
+    throw new Error('updateObservation: the patch must define at least one field')
+  }
+
+  return request<Observation>(`/observations/${id}`, undefined, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+}
+
+/**
+ * Soft delete, with no query parameters at all. The runtime also accepts `?hard=true`, but it
+ * exposes no undelete endpoint: a permanent deletion could never be undone, so this client
+ * deliberately has no way to express one (the function takes no options).
+ */
+export function deleteObservation(id: number): Promise<DeleteResult> {
+  return request<DeleteResult>(`/observations/${id}`, undefined, { method: 'DELETE' })
+}
+
+/** Reads only: downloads the runtime export. Nothing in this app imports a payload back. */
+export function getExport(options?: ProjectReadOptions): Promise<ExportData> {
+  return request<ExportData>('/export', projectParams(options))
 }
