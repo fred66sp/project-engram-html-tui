@@ -79,8 +79,8 @@ duplicate_count, last_seen_at, created_at, updated_at, pinned?}`.
 
 | # | Tarea | Estado |
 | --- | --- | --- |
-| 1 | Scaffold Vite + Vue 3 + TS, proxy de desarrollo y `server/server.mjs` (estático + proxy `/api`) | pendiente |
-| 2 | Cliente API tipado (`src/api/`) con tipos y manejo de errores | pendiente |
+| 1 | Scaffold Vite + Vue 3 + TS, proxy de desarrollo y `server/server.mjs` (estático + proxy `/api`) | hecho — commit fb8f44f |
+| 2 | Cliente API tipado (`src/api/`) con tipos y manejo de errores | hecho |
 | 3 | Shell de UI: layout, navegación, selector de proyecto/scope/tipo y estado global de filtros | pendiente |
 | 4 | Dashboard: stats, proyectos y resumen de `doctor` | pendiente |
 | 5 | Búsqueda: `q`, tipo, scope, proyecto y `match_mode`, con `rank` visible | pendiente |

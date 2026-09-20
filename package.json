@@ -9,6 +9,7 @@
     "build": "vue-tsc --noEmit && vite build",
     "typecheck": "vue-tsc --noEmit",
     "preview": "vite preview",
+    "smoke": "node scripts/smoke-api.ts",
     "start": "node server/server.mjs"
   },
   "dependencies": {
