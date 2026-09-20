@@ -24,7 +24,7 @@ export const router = createRouter({
     { path: '/sessions', name: 'sessions', component: SessionsView },
     { path: '/review', name: 'review', component: ReviewView },
     { path: '/conflicts', name: 'conflicts', component: ConflictsView },
-    { path: '/new', name: 'new-memory', component: NewMemoryView },
+    { path: '/new', name: 'new-memory', component: NewMemoryView, meta: { filters: false } },
     { path: '/projects', name: 'projects', component: ProjectsView, meta: { filters: false } },
     { path: '/commands', name: 'commands', component: CommandsView, meta: { filters: 'commands' } },
     { path: '/help', name: 'help', component: HelpView, meta: { filters: false } },
