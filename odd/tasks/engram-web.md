@@ -80,21 +80,49 @@ duplicate_count, last_seen_at, created_at, updated_at, pinned?}`.
 | # | Tarea | Estado |
 | --- | --- | --- |
 | 1 | Scaffold Vite + Vue 3 + TS, proxy de desarrollo y `server/server.mjs` (estático + proxy `/api`) | hecho — commit fb8f44f |
-| 2 | Cliente API tipado (`src/api/`) con tipos y manejo de errores | hecho |
-| 3 | Shell de UI: layout, navegación, selector de proyecto/scope/tipo y estado global de filtros | hecho |
-| 4 | Dashboard: stats, proyectos y resumen de `doctor` | hecho |
-| 5 | Búsqueda: `q`, tipo, scope, proyecto y `match_mode`, con `rank` visible | hecho — pendiente de commit |
-| 6 | Recientes + detalle de observación: markdown saneado, metadatos y enlace a timeline | hecho |
-| 7 | Timeline con `project` explícito de la observación focal | hecho — pendiente de commit |
-| 8 | Sesiones y prompts: listado de sesiones, metadatos de sesión y prompts recientes | hecho — pendiente de commit |
-| 9 | Review y conflictos: cola de revisión, relaciones y estadísticas | hecho — pendiente de commit |
-| 10 | Verificación: build, typecheck, smoke test contra API viva y revisión de contrato | pendiente |
+| 2 | Cliente API tipado (`src/api/`) con tipos y manejo de errores | hecho — commit 97a5e3b |
+| 3 | Shell de UI: layout, navegación, selector de proyecto/scope/tipo y estado global de filtros | hecho — commit 78b6ce9 |
+| 4 | Dashboard: stats, proyectos y resumen de `doctor` | hecho — commit 78b6ce9 |
+| 5 | Búsqueda: `q`, tipo, scope, proyecto y `match_mode`, con `rank` visible | hecho — commit 176c4f6 |
+| 6 | Recientes + detalle de observación: markdown saneado, metadatos y enlace a timeline | hecho — commit 78b6ce9 |
+| 7 | Timeline con `project` explícito de la observación focal | hecho — commit 176c4f6 |
+| 8 | Sesiones y prompts: listado de sesiones, metadatos de sesión y prompts recientes | hecho — commit 176c4f6 |
+| 9 | Review y conflictos: cola de revisión, relaciones y estadísticas | hecho — commit 176c4f6 |
+| 10 | Verificación: build, typecheck, smoke test contra API viva y revisión de contrato | hecho — verificación independiente, pendiente la comprobación visual en navegador |
 
 ## Evidencia
 
 - Las tareas se cierran con un commit de unidad de trabajo en `feature/engram-web` (autorización de
   commits según `CONTRATO_FLUJO_GIT_VERSIONADO.md`).
-- (pendiente) Commits por tarea.
+- Commits por unidad de trabajo:
+  - `fb8f44f` scaffold y proxy local.
+  - `97a5e3b` cliente API tipado y check ejecutable contra el runtime vivo.
+  - `78b6ce9` shell, dashboard, recientes y detalle de observación.
+  - `176c4f6` búsqueda, timeline, sesiones, review y conflictos.
+
+### Verificación independiente (tarea 10)
+
+Ejecutada por `gentle-ai-verify` (lectura y ejecución, sin ediciones) sobre `176c4f6`:
+
+- Mecánica A1–A5: PASS. `npm run typecheck`, `npm run build` y `npm run smoke` en 0; las 8 rutas
+  cliente devuelven 200 a través del proxy y las 8 llamadas al API devuelven JSON válido.
+- Contrato B1–B9: PASS, cero fallos. Comprobado: `fetch` solo en `src/api/client.ts:79`; el
+  invariante `project` / `all_projects` con un único punto de aplicación (`projectParams()`);
+  `getTimeline` nunca se llama sin proyecto y el caso sin proyecto muestra un mensaje; ninguna ruta
+  o enlace muerto; el orden de `MarkdownView` es parsear → sanear → inyectar y es el único `v-html`;
+  las formas declaradas coinciden con las respuestas reales; las carencias del API se declaran en
+  la UI en lugar de simularse; ningún verbo de escritura en `src/`.
+- No verificable sin navegador (queda para el humano): renderizado y layout, orden de foco,
+  estados de carga/vacío/error, refetch al cambiar filtros, tablas y bloques de código del markdown,
+  paginación de conflictos y el panel de sesión.
+
+### Hallazgos residuales de la verificación
+
+1. `getContext` está exportado en `src/api/client.ts` y no tiene ningún consumidor en v1.
+2. `ConflictsView` depende del orden de dos `watch` (reinicio de `offset` antes de la carga);
+   reordenarlos provocaría una petición duplicada.
+3. La rama `session_info: null` del timeline no se observó en peticiones reales: está cubierta por
+   tipos y por la vista, pero no por evidencia empírica.
 
 ### Verificación mecánica (2026-09-20)
 
