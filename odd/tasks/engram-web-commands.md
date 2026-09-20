@@ -59,13 +59,11 @@ entrada muestra el comando exacto con botón **Copiar**, qué hace (descripción
   falla en silencio.
 - **Sin ejecución, sin red y sin estado**: la vista es estática, no llama al runtime y no tiene
   `onMounted`. Las únicas interacciones son copiar y los filtros del catálogo.
-- **Los filtros viven en la barra del armazón**, con tres estados declarados por la ruta:
-  proyecto/scope/tipo por defecto, el par grupo/búsqueda del catálogo
-  (`meta: { filters: 'commands' }`) y oculta (`meta: { filters: false }`). Filtran el catálogo en
-  memoria con el mismo aspecto que las demás pantallas, sin consultar al runtime; la barra queda
-  oculta en Proyectos, Ayuda, el detalle de observación, el timeline y el formulario de nueva
-  memoria (`meta: { filters: false }`), porque en esas rutas no filtraba nada; en Nueva memoria el
-  control es el selector de proyecto de la propia pantalla.
+- **La barra sigue lo que cada ruta declara** en su `meta.filters`: `['project']` en Panel,
+  Sesiones, Review y Conflictos (solo leen ese filtro), `['project', 'scope', 'type']` en Recientes
+  y Búsqueda, y `'commands'` en Comandos para el par grupo/búsqueda del catálogo. Una ruta sin
+  declaración no muestra barra (Proyectos, Ayuda, el detalle de observación, el timeline y el
+  formulario de nueva memoria, donde el control es su propio selector de proyecto).
 
 ## Tareas
 
@@ -92,7 +90,7 @@ entrada muestra el comando exacto con botón **Copiar**, qué hace (descripción
 | Navegador real, `http://localhost:5173/commands` | 56 tarjetas y 56 botones, 6 grupos con anclas, chip de navegación presente, 8 avisos de comando destructivo; al pulsar Copiar aparece «Copiado» sin error |
 | Navegador real, `/projects` y `/help` | Proyectos sigue mostrando sus 5 botones con el composable compartido; Ayuda enlaza dos veces a `/commands` |
 | `npm run smoke` | no ejecutado: necesita el runtime vivo en 7437 |
-| Navegador real, barra de filtros | /commands muestra el filtro de catálogo (grupo + texto) en la barra superior, encima de `.app-main`; /recent conserva los filtros de proyecto, scope y tipo; /projects y /new no muestran barra |
+| Navegador real, campos de la barra | pendiente de observar tras este cambio: Panel/Sesiones/Review/Conflictos solo Proyecto, Recientes/Búsqueda los tres, Comandos grupo y búsqueda, y el resto sin barra |
 
 ## Evidencia de commits (rama `feature/commands-reference`)
 

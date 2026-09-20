@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { COMMAND_COUNT, COMMAND_GROUPS, countCommands } from '../api/commands'
+import type { FilterField } from '../router'
 import {
   clearCommandFilters,
   commandFilters,
@@ -15,14 +16,19 @@ import {
 const route = useRoute()
 
 /**
- * The shell bar has three states, declared by the route: the default project/scope/type triple,
- * the catalog's own group/search pair (`meta: { filters: 'commands' }`), or nothing at all
- * (`meta: { filters: false }`), so no screen shows a control that would do nothing.
+ * The bar shows only what the route declares: the catalog's own pair on `'commands'`, and otherwise
+ * exactly the shared filters that view reads. A route that declares nothing gets no bar, so no
+ * screen can show a control that would do nothing.
  */
-const filterBar = computed<'default' | 'commands' | 'none'>(() => {
-  if (route.meta.filters === false) return 'none'
-  return route.meta.filters === 'commands' ? 'commands' : 'default'
+const isCatalogBar = computed(() => route.meta.filters === 'commands')
+
+/** Empty on the catalog bar and on the routes that declare nothing. */
+const filterFields = computed<ReadonlySet<FilterField>>(() => {
+  const spec = route.meta.filters
+  return new Set<FilterField>(Array.isArray(spec) ? spec : [])
 })
+
+const hasFilterBar = computed(() => isCatalogBar.value || filterFields.value.size > 0)
 
 /** Counter of the bar's catalog state; the view filters with the same helper. */
 const visibleCommands = computed(() => countCommands(commandFilters))
@@ -54,8 +60,8 @@ const isCommandFiltered = computed(
       <RouterLink to="/help" active-class="is-active">Ayuda</RouterLink>
     </nav>
 
-    <section v-if="filterBar !== 'none'" class="filter-bar" aria-label="Filtros de lectura">
-      <template v-if="filterBar === 'commands'">
+    <section v-if="hasFilterBar" class="filter-bar" aria-label="Filtros de lectura">
+      <template v-if="isCatalogBar">
         <div class="field">
           <label for="command-group">Grupo</label>
           <select id="command-group" v-model="commandFilters.group">
@@ -87,7 +93,7 @@ const isCommandFiltered = computed(
       </template>
 
       <template v-else>
-        <div class="field">
+        <div v-if="filterFields.has('project')" class="field">
           <label for="filter-project">Proyecto</label>
           <select id="filter-project" v-model="filters.project">
             <option value="">Todos los proyectos</option>
@@ -95,7 +101,7 @@ const isCommandFiltered = computed(
           </select>
         </div>
 
-        <div class="field">
+        <div v-if="filterFields.has('scope')" class="field">
           <label for="filter-scope">Scope</label>
           <select id="filter-scope" v-model="filters.scope">
             <option value="">cualquiera</option>
@@ -105,15 +111,15 @@ const isCommandFiltered = computed(
           </select>
         </div>
 
-        <div class="field">
+        <div v-if="filterFields.has('type')" class="field">
           <label for="filter-type">Tipo</label>
           <input id="filter-type" v-model="filters.type" type="text" placeholder="bugfix, decision, …" />
         </div>
 
-        <p class="filter-note">
-          Nota: en la lista de recientes el filtro por tipo se aplica en el cliente sobre la página
-          cargada, porque los endpoints de recientes/listado del runtime no aceptan el parámetro
-          <code>type</code> (solo <code>/search</code> lo soporta).
+        <p v-if="filterFields.has('type')" class="filter-note">
+          Nota: el tipo solo lo aplica el runtime en la Búsqueda. En Recientes se filtra en el
+          cliente sobre la página cargada, porque los endpoints de recientes y de listado del
+          runtime no aceptan el parámetro <code>type</code>.
         </p>
       </template>
     </section>
