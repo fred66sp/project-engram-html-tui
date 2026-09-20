@@ -37,6 +37,21 @@
   `/local/projects`. Nunca abre el 7437 ni el 7438 y nunca lanza el binario `engram`. Para poder
   levantarlo, `server/server.mjs` exporta la fábrica `createEngramWebServer(options)` y solo
   escucha cuando se ejecuta como programa principal.
+- Pantalla de Comandos (`/commands`) con el catálogo único de los comandos de consola: los scripts
+  npm de este proyecto y el CLI completo de Engram v2.0.0, cada entrada con el comando exacto,
+  botón de copiar, descripción, propósito y aviso en los destructivos. Los filtros del catálogo
+  —grupo y búsqueda por texto libre, buscando en el comando, el nombre, la descripción y el
+  propósito— viven en la barra superior, en la misma franja y con el mismo aspecto que los filtros
+  de las demás pantallas, no dentro de la página. `PROJECT_COMMANDS` de la pantalla de Proyectos se
+  deriva de ese catálogo y la Ayuda ahora enlaza a él en vez de repetir las tablas de arranque y
+  comprobaciones; la página no ejecuta nada.
+- `npm run check:commands`, que comprueba el catálogo sin red ni procesos: ids únicos, entradas
+  completas y ningún texto de comando repetido.
+- La barra de filtros del armazón ahora muestra solo los filtros que cada pantalla lee de verdad:
+  Panel, Sesiones, Review y Conflictos filtran solo por proyecto, mientras que Recientes y Búsqueda
+  muestran también scope y tipo. Cada ruta lo declara en su `meta` (`filters: ['project']`,
+  `['project', 'scope', 'type']` o `'commands'` para el catálogo), y una ruta sin declaración no
+  muestra barra, así que no aparece un control que no filtre nada.
 
 ### Notas
 

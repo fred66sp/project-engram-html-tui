@@ -10,6 +10,7 @@ import {
 } from '../api/projects'
 import type { ProjectInventory } from '../api/types'
 import { describeError } from '../state/app-state'
+import { useCopy } from '../state/use-copy'
 
 /**
  * Read-only inventory: one request (`getProjects()`) and nothing else. The runtime's HTTP API
@@ -34,9 +35,7 @@ const COMMANDS: ReadonlyArray<{ key: keyof typeof PROJECT_COMMANDS; label: strin
   { key: 'consolidate', label: 'Consolidación: real' },
 ]
 
-const copiedKey = ref<keyof typeof PROJECT_COMMANDS | null>(null)
-const copyError = ref('')
-let copyTimer: ReturnType<typeof setTimeout> | undefined
+const { copiedKey, copyError, copy } = useCopy()
 
 async function load(): Promise<void> {
   loading.value = true
@@ -55,24 +54,8 @@ async function load(): Promise<void> {
  * Copying is the only interaction here. A missing `navigator.clipboard` or a rejected write
  * must surface visibly instead of failing silently.
  */
-async function copyCommand(key: keyof typeof PROJECT_COMMANDS): Promise<void> {
-  copyError.value = ''
-  copiedKey.value = null
-  if (!navigator.clipboard?.writeText) {
-    copyError.value =
-      'El portapapeles no está disponible en este navegador (necesita HTTPS o localhost). Copia el comando a mano.'
-    return
-  }
-  try {
-    await navigator.clipboard.writeText(PROJECT_COMMANDS[key])
-    copiedKey.value = key
-    if (copyTimer) clearTimeout(copyTimer)
-    copyTimer = setTimeout(() => {
-      copiedKey.value = null
-    }, 3000)
-  } catch (cause) {
-    copyError.value = `No se pudo copiar el comando: ${describeError(cause)}`
-  }
+function copyCommand(key: keyof typeof PROJECT_COMMANDS): void {
+  void copy(key, PROJECT_COMMANDS[key])
 }
 
 onMounted(load)

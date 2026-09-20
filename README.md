@@ -7,7 +7,11 @@ borrar de forma suave con confirmación por identificador y descargar un export.
 Incluye además la pantalla de Proyectos (`/projects`): el inventario del almacén con
 sus conteos y directorios, la marca de los proyectos podables y de los nombres con
 ruta, y los comandos de poda y consolidación listos para copiar. Esa pantalla solo
-lee: no ejecuta ninguna orden.
+lee: no ejecuta ninguna orden. Incluye también la pantalla de Comandos
+(`/commands`): el catálogo único de los comandos de consola —los scripts npm de este
+proyecto y el CLI completo de Engram v2.0.0— con el comando exacto, botón de copiar,
+descripción, propósito y aviso en los destructivos. Esa pantalla tampoco ejecuta
+nada: solo copia texto al portapapeles.
 
 ## Requisitos
 
@@ -43,6 +47,7 @@ npm run typecheck      # vue-tsc, sin emitir
 npm run smoke          # lectura contra el runtime vivo
 npm run check:writes   # mutaciones sin red: método, ruta y cuerpo
 npm run check:projects # inventario de proyectos sin red ni procesos
+npm run check:commands # catálogo de comandos sin red ni procesos
 npm run check:server   # servidor de producción sin red externa ni procesos
 npm run build          # typecheck + build de producción
 ```
@@ -50,7 +55,9 @@ npm run build          # typecheck + build de producción
 `smoke` necesita el runtime escuchando en 7437 y no modifica nada. `check:writes`
 intercepta `fetch`, así que verifica el camino de escritura sin tocar la memoria
 real. `check:projects` no necesita el runtime y no lanza ningún proceso: parsea un
-ciclo MCP capturado e intercepta `fetch` para revisar la llamada del cliente.
+ciclo MCP capturado e intercepta `fetch` para revisar la llamada del cliente. `check:commands`
+tampoco necesita red ni procesos: solo lee el catálogo y comprueba que los ids son únicos, que
+cada entrada está completa y que ningún texto de comando se repite.
 `check:server` levanta el servidor de producción en un puerto efímero con un
 runtime de mentira local y un directorio de artefactos temporal, así que comprueba
 el proxy `/api/*`, el fallback de la SPA y `/local/projects` sin abrir el 7437 ni
@@ -89,4 +96,7 @@ La ruta `/help` abre la página de ayuda: qué es la aplicación, cómo se conec
 al runtime, cómo arrancarla y qué comprueba cada script, qué hace cada pantalla
 (incluida la de Proyectos y de dónde salen sus datos), el vocabulario de proyectos,
 scopes y filtros, qué hace exactamente cada acción de escritura, las limitaciones
-conocidas del API local y los avisos de lectura.
+conocidas del API local y los avisos de lectura. La ruta `/commands` es el catálogo de
+los comandos de consola (scripts npm del proyecto y CLI de Engram), cada uno con su botón
+de copiar, y la propia Ayuda enlaza a él en vez de repetir las tablas de arranque y
+comprobaciones.

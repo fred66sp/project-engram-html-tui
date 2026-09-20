@@ -143,38 +143,11 @@
 
     <section id="arranque" class="help-section">
       <h2>Cómo arrancarla</h2>
-      <table class="checks">
-        <thead>
-          <tr>
-            <th scope="col">Comando</th>
-            <th scope="col">Qué hace</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><code>npm install</code></td>
-            <td>Instala las dependencias del proyecto.</td>
-          </tr>
-          <tr>
-            <td><code>npm run dev</code></td>
-            <td>
-              Servidor de desarrollo en <code>http://127.0.0.1:5173</code>, con
-              <code>/api/*</code> reescrito hacia el runtime.
-            </td>
-          </tr>
-          <tr>
-            <td><code>npm run build</code></td>
-            <td>Comprobación de tipos y build de producción en <code>dist/</code>.</td>
-          </tr>
-          <tr>
-            <td><code>npm start</code></td>
-            <td>
-              Servidor de producción en <code>http://127.0.0.1:7438</code>: sirve
-              <code>dist/</code> con fallback de SPA y hace de proxy de <code>/api/*</code>.
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <p>
+        Los comandos de arranque de esta aplicación —instalación, desarrollo, build y servidor de
+        producción— están en el catálogo, cada uno con su botón de copiar:
+        <RouterLink to="/commands">Comandos</RouterLink>.
+      </p>
 
       <h3>Variables de entorno</h3>
       <table class="checks">
@@ -205,23 +178,12 @@
       </table>
 
       <h3>Comprobaciones</h3>
-      <ul>
-        <li><code>npm run typecheck</code>: comprueba los tipos con <code>vue-tsc</code> sin emitir.</li>
-        <li>
-          <code>npm run smoke</code>: hace lecturas contra el runtime vivo en 7437 y no modifica nada.
-        </li>
-        <li>
-          <code>npm run check:writes</code>: intercepta <code>fetch</code> y comprueba el método,
-          la ruta y el cuerpo de cada mutación sin usar la red, para probar el camino de escritura
-          sin tocar la memoria real.
-        </li>
-        <li>
-          <code>npm run check:projects</code>: ejercita el inventario de proyectos sin red y sin
-          lanzar ningún proceso; parsea un ciclo MCP capturado e intercepta <code>fetch</code> para
-          revisar la llamada del cliente.
-        </li>
-        <li><code>npm run build</code>: comprobación de tipos más build de producción.</li>
-      </ul>
+      <p>
+        Cada script de comprobación está descrito en
+        <RouterLink to="/commands">Comandos</RouterLink>, junto con el CLI de Engram completo. En
+        resumen: <code>npm run typecheck</code> no emite nada, <code>npm run smoke</code> lee del
+        runtime vivo, y las comprobaciones <code>check:*</code> no necesitan ni red ni el runtime.
+      </p>
     </section>
 
     <section id="pantallas" class="help-section">
@@ -313,6 +275,15 @@
             <td>
               Inventario del almacén con conteos y directorios, marca de los proyectos podables y
               de los nombres con ruta, y los comandos de poda y consolidación para copiar. Solo lee.
+            </td>
+          </tr>
+          <tr>
+            <td>Comandos</td>
+            <td><code>/commands</code></td>
+            <td>
+              Catálogo de los comandos de consola —scripts npm del proyecto y CLI de Engram— con el
+              comando exacto, botón de copiar, descripción y propósito. Solo lee y copia: no ejecuta
+              nada.
             </td>
           </tr>
         </tbody>
@@ -602,6 +573,7 @@
 // The only dynamic part of this page: one read-only probe of the runtime it describes. Local refs
 // on purpose, so the page does not depend on the shell's shared health poll having run.
 import { onMounted, ref } from 'vue'
+import { RouterLink } from 'vue-router'
 import { getHealth } from '../api/client'
 
 const runtimeVersion = ref('')

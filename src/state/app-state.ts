@@ -2,6 +2,7 @@
 // No Pinia on purpose: three read views do not justify a store.
 import { reactive, ref } from 'vue'
 import { ApiError, getHealth, getStats } from '../api/client'
+import type { CommandFilter } from '../api/commands'
 import type { Health, Scope, Stats } from '../api/types'
 
 export interface Filters {
@@ -14,6 +15,19 @@ export interface Filters {
 }
 
 export const filters = reactive<Filters>({ project: '', scope: '', type: '' })
+
+/**
+ * Filters of the /commands catalog. They live here, next to `filters`, because the shell bar owns
+ * both sets: the project/scope/type triple, and this pair, which is the only kind a static list can
+ * use. Empty group plus empty query means "nothing filtered".
+ */
+export const commandFilters = reactive<CommandFilter>({ group: '', query: '' })
+
+/** Back to the full catalog, from the bar's Limpiar button. */
+export function clearCommandFilters(): void {
+  commandFilters.group = ''
+  commandFilters.query = ''
+}
 
 export const projects = ref<string[]>([])
 export const health = ref<Health | null>(null)

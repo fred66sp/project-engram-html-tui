@@ -5,15 +5,20 @@
 // canonicalize to the same project (`MergeProjects` fails otherwise with "source project
 // ... must normalize to canonical project ..."), so the interface shows the CLI command as
 // the authority and never invents an equivalence (fact 5, odd/tasks/engram-web-projects.md).
+import { commandText } from './commands.ts'
 import type { ProjectStats } from './types'
 
-/** Exact CLI commands the view offers as copy buttons: single source of truth. */
+/**
+ * The five exact commands the /projects view offers as copy buttons. Derived from the shared
+ * catalog so the text lives in exactly one place; an unknown id throws instead of rendering an
+ * empty command.
+ */
 export const PROJECT_COMMANDS = {
-  list: 'engram projects list',
-  pruneDryRun: 'engram projects prune --dry-run',
-  prune: 'engram projects prune',
-  consolidateDryRun: 'engram projects consolidate --all --dry-run',
-  consolidate: 'engram projects consolidate --all',
+  list: commandText('projects-list'),
+  pruneDryRun: commandText('projects-prune-dry-run'),
+  prune: commandText('projects-prune'),
+  consolidateDryRun: commandText('projects-consolidate-dry-run'),
+  consolidate: commandText('projects-consolidate'),
 } as const
 
 /** Totals shown next to the inventory table. */
