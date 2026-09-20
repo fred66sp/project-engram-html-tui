@@ -207,3 +207,90 @@ export interface ExportData {
   observations: Observation[] | null
   prompts: unknown[] | null
 }
+
+// ---- Write payloads (phase 3: review, new memory, conflict judgment) ----
+
+/**
+ * Verbs accepted by `POST /conflicts/judge`. Same closed set the runtime validates in
+ * `store.isValidRelationVerb`; anything else is rejected with 400.
+ */
+export type RelationVerb =
+  | 'related'
+  | 'compatible'
+  | 'scoped'
+  | 'conflicts_with'
+  | 'supersedes'
+  | 'not_conflict'
+
+/**
+ * Body of `POST /sessions`. `ownershipMode` defaults to `project_owned` in the client, which
+ * is what the CLI's `engram save` uses to own the `manual-save-<project>` session.
+ */
+export interface CreateSessionInput {
+  id: string
+  project: string
+  directory: string
+  ownershipMode?: string
+}
+
+/** Shape returned by `POST /sessions` (`{"id": ..., "status": "created"}`). */
+export interface CreateSessionResult {
+  id: string
+  status: string
+}
+
+/** Body of `POST /observations` (store.AddObservationParams). */
+export interface CreateObservationInput {
+  sessionId: string
+  type: string
+  title: string
+  content: string
+  project: string
+  scope?: Scope | ''
+  topicKey?: string
+}
+
+/** Shape returned by `POST /observations` (`{"id": 12, "status": "saved"}`). */
+export interface CreateObservationResult {
+  id: number
+  status: string
+}
+
+/**
+ * Shape returned by `POST /review/mark_reviewed`: the runtime reloads the observation and
+ * answers with `reviewObservationPayload`, not with the full observation.
+ */
+export interface MarkReviewedResult {
+  id: number
+  sync_id: string
+  title: string
+  type: string
+  state: string
+  project?: string
+  review_after?: string
+}
+
+/** Body of `POST /conflicts/judge`. `judgmentId` is the relation's `sync_id`. */
+export interface JudgeRelationInput {
+  judgmentId: string
+  relation: RelationVerb
+  reason?: string
+  evidence?: string
+  confidence?: number
+}
+
+/**
+ * The judged row: `ConflictRelation` plus the fields the judgment itself writes. The runtime
+ * answers `{"relation": <store.Relation>}`, so the extra keys arrive on that nested object.
+ */
+export interface JudgedRelation extends ConflictRelation {
+  marked_by_actor?: string | null
+  marked_by_kind?: string | null
+  marked_by_model?: string | null
+  session_id?: string | null
+}
+
+/** Shape returned by `POST /conflicts/judge`: `{"relation": {...}}`. */
+export interface JudgeRelationResult {
+  relation: JudgedRelation
+}

@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import ConflictsView from './views/ConflictsView.vue'
 import DashboardView from './views/DashboardView.vue'
+import NewMemoryView from './views/NewMemoryView.vue'
 import ObservationView from './views/ObservationView.vue'
 import RecentView from './views/RecentView.vue'
 import ReviewView from './views/ReviewView.vue'
@@ -20,5 +21,6 @@ export const router = createRouter({
     { path: '/sessions', name: 'sessions', component: SessionsView },
     { path: '/review', name: 'review', component: ReviewView },
     { path: '/conflicts', name: 'conflicts', component: ConflictsView },
+    { path: '/new', name: 'new-memory', component: NewMemoryView },
   ],
 })

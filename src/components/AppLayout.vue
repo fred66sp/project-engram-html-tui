@@ -19,6 +19,7 @@ import { filters, health, loadHealth, projects, runtimeError } from '../state/ap
       <RouterLink to="/sessions" active-class="is-active">Sesiones</RouterLink>
       <RouterLink to="/review" active-class="is-active">Review</RouterLink>
       <RouterLink to="/conflicts" active-class="is-active">Conflictos</RouterLink>
+      <RouterLink to="/new" active-class="is-active">Nueva memoria</RouterLink>
     </nav>
 
     <section class="filter-bar" aria-label="Filtros de lectura">

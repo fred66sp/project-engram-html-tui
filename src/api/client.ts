@@ -1,6 +1,7 @@
 // Typed client for the local Engram runtime HTTP API (engram serve, v2.0.0).
 // Reads are read-only in spirit; the write helpers below are limited to the safe subset:
-// pin/unpin, field PATCH, soft delete (no `hard`) and export download.
+// pin/unpin, field PATCH, soft delete (no `hard`), export download, mark reviewed, create
+// memory (session + observation) and conflict judgment. No hard delete and no import.
 //
 // The SPA always calls `/api/*`; Vite (dev) and server/server.mjs (prod) rewrite it to the
 // runtime origin, so the browser stays same-origin (the runtime sends no CORS headers).
@@ -8,16 +9,24 @@
 import type {
   ConflictList,
   ConflictStats,
+  CreateObservationInput,
+  CreateObservationResult,
+  CreateSessionInput,
+  CreateSessionResult,
   CurrentProject,
   DeleteResult,
   DoctorReport,
   ExportData,
   Health,
+  JudgeRelationInput,
+  JudgeRelationResult,
+  MarkReviewedResult,
   Observation,
   ObservationPatch,
   PinResult,
   ProjectReadOptions,
   Prompt,
+  RelationVerb,
   ReviewList,
   Scope,
   SearchResult,
@@ -260,4 +269,114 @@ export function deleteObservation(id: number): Promise<DeleteResult> {
 /** Reads only: downloads the runtime export. Nothing in this app imports a payload back. */
 export function getExport(options?: ProjectReadOptions): Promise<ExportData> {
   return request<ExportData>('/export', projectParams(options))
+}
+
+// ---- Controlled writes (phase 3: mark reviewed, new memory, conflict judgment) ----
+
+/** The closed set of verbs `POST /conflicts/judge` accepts (store.isValidRelationVerb). */
+export const RELATION_VERBS: readonly RelationVerb[] = [
+  'related',
+  'compatible',
+  'scoped',
+  'conflicts_with',
+  'supersedes',
+  'not_conflict',
+]
+
+/**
+ * Single source of the session id convention the CLI's `engram save` uses. Reusing the same
+ * session is deliberate: one manual session per project instead of a new one per save.
+ */
+export function manualSessionId(project: string): string {
+  return `manual-save-${project}`
+}
+
+/**
+ * Registers the manual session. The runtime upserts on `id`, so re-creating an identical
+ * session is harmless; a session already owned by another project answers 409
+ * `session_project_conflict`, which the caller must surface instead of ignoring.
+ */
+export function createSession(input: CreateSessionInput): Promise<CreateSessionResult> {
+  return request<CreateSessionResult>('/sessions', undefined, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      id: input.id,
+      project: input.project,
+      directory: input.directory,
+      ownership_mode: input.ownershipMode ?? 'project_owned',
+    }),
+  })
+}
+
+/**
+ * Publishes one observation. The runtime requires a non-empty `session_id` and `content` and a
+ * `title` that is not whitespace-only; `scope`/`topic_key` are omitted when empty so the
+ * runtime applies its own defaults instead of storing empty strings.
+ */
+export function createObservation(input: CreateObservationInput): Promise<CreateObservationResult> {
+  const body: Record<string, string> = {
+    session_id: input.sessionId,
+    type: input.type,
+    title: input.title,
+    content: input.content,
+    project: input.project,
+  }
+  if (input.scope) body.scope = input.scope
+  if (input.topicKey) body.topic_key = input.topicKey
+
+  return request<CreateObservationResult>('/observations', undefined, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+}
+
+/**
+ * Resets the local review cycle of one observation. `allProjects` is required when the SPA is
+ * filtered to "todos los proyectos": without a project the runtime falls back to the project
+ * detected from its own cwd.
+ */
+export function markReviewed(id: number, options?: ProjectReadOptions): Promise<MarkReviewedResult> {
+  return request<MarkReviewedResult>('/review/mark_reviewed', projectParams(options), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ observation_id: id }),
+  })
+}
+
+/**
+ * Stores a verdict for one relation. The runtime runs `UPDATE memory_relations ... WHERE
+ * sync_id = ?` with no state guard, so a second call replaces the previous verdict.
+ * Invalid verbs and out-of-range confidence are rejected here, before any request is sent.
+ */
+export async function judgeRelation(input: JudgeRelationInput): Promise<JudgeRelationResult> {
+  if (!RELATION_VERBS.includes(input.relation)) {
+    throw new Error(
+      `judgeRelation: invalid relation verb ${JSON.stringify(input.relation)} — must be one of: ${RELATION_VERBS.join(', ')}`,
+    )
+  }
+  if (
+    input.confidence !== undefined &&
+    (typeof input.confidence !== 'number' ||
+      Number.isNaN(input.confidence) ||
+      input.confidence < 0 ||
+      input.confidence > 1)
+  ) {
+    throw new Error('judgeRelation: confidence must be a number between 0.0 and 1.0')
+  }
+
+  const body: Record<string, string | number> = {
+    judgment_id: input.judgmentId,
+    relation: input.relation,
+  }
+  if (input.reason) body.reason = input.reason
+  if (input.evidence) body.evidence = input.evidence
+  if (input.confidence !== undefined) body.confidence = input.confidence
+
+  return request<JudgeRelationResult>('/conflicts/judge', undefined, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
 }

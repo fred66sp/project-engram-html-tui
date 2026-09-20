@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue'
-import { getReviewQueue } from '../api/client'
-import type { ReviewList } from '../api/types'
+import { ApiError, getReviewQueue, markReviewed as markReviewedRequest } from '../api/client'
+import type { Observation, ReviewList } from '../api/types'
 import ObservationCard from '../components/ObservationCard.vue'
 import { describeError, filters } from '../state/app-state'
 
@@ -12,20 +12,52 @@ const queue = ref<ReviewList | null>(null)
 const loading = ref(false)
 const error = ref('')
 
+/** Id of the observation whose mark-reviewed request is in flight, if any. */
+const markingId = ref<number | null>(null)
+const notice = ref('')
+const actionError = ref('')
+
+/** Same invariant as the queue read: never send `project` and `all_projects` together. */
+function queueFilter(): { project: string } | { allProjects: true } {
+  return filters.project ? { project: filters.project } : { allProjects: true }
+}
+
 async function load(): Promise<void> {
   loading.value = true
   error.value = ''
+  // Stale action feedback must not survive a filter change or a refresh.
+  notice.value = ''
+  actionError.value = ''
   try {
-    queue.value = await getReviewQueue({
-      // Never send `project` and `all_projects` together: the client enforces the invariant.
-      ...(filters.project ? { project: filters.project } : { allProjects: true }),
-      limit: limit.value,
-    })
+    queue.value = await getReviewQueue({ ...queueFilter(), limit: limit.value })
   } catch (cause) {
     queue.value = null
     error.value = describeError(cause)
   } finally {
     loading.value = false
+  }
+}
+
+/**
+ * Resets the local review cycle of one observation and reloads the queue. On a project-scoped
+ * queue the runtime resolves the project, so a mismatch answers 404 instead of touching a row
+ * from another project.
+ */
+async function markReviewed(observation: Observation): Promise<void> {
+  markingId.value = observation.id
+  notice.value = ''
+  actionError.value = ''
+  try {
+    await markReviewedRequest(observation.id, queueFilter())
+    await load()
+    notice.value = `Observación #${observation.id} «${observation.title}» marcada como revisada. Esto reinicia el ciclo local de revisión de esa observación.`
+  } catch (cause) {
+    actionError.value =
+      cause instanceof ApiError
+        ? `No se pudo marcar la observación #${observation.id} como revisada: ${cause.message}`
+        : describeError(cause)
+  } finally {
+    markingId.value = null
   }
 }
 
@@ -53,9 +85,13 @@ watch(() => [filters.project, limit.value], load)
     </div>
 
     <p class="filter-note">
-      Vista de solo lectura: en v1 no hay acción para marcar una observación como revisada, porque el
-      API local de v1 se consume sin escrituras.
+      La cola se lee en solo lectura; la única escritura de esta vista es marcar una observación
+      como revisada, que reinicia su ciclo local de revisión. El botón está fuera del enlace de la
+      tarjeta para que al pulsarlo no se navegue al detalle.
     </p>
+
+    <p v-if="actionError" class="state bad">{{ actionError }}</p>
+    <p v-else-if="notice" class="state ok">{{ notice }}</p>
 
     <p v-if="loading" class="state">Cargando cola de revisión…</p>
     <p v-else-if="error" class="state bad">{{ error }}</p>
@@ -64,11 +100,19 @@ watch(() => [filters.project, limit.value], load)
     </p>
 
     <template v-else>
-      <ObservationCard
-        v-for="observation in queue.observations"
-        :key="observation.id"
-        :observation="observation"
-      />
+      <div v-for="observation in queue.observations" :key="observation.id" class="card-row">
+        <ObservationCard :observation="observation" />
+        <div class="card-actions">
+          <button
+            type="button"
+            class="btn"
+            :disabled="markingId === observation.id"
+            @click="markReviewed(observation)"
+          >
+            {{ markingId === observation.id ? 'Marcando…' : 'Marcar revisada' }}
+          </button>
+        </div>
+      </div>
     </template>
   </div>
 </template>

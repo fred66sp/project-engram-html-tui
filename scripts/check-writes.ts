@@ -8,6 +8,7 @@
 // Usage: npm run check:writes
 // Node 24 strips the TypeScript types natively, so this needs no test framework.
 import assert from 'node:assert/strict'
+import type { RelationVerb } from '../src/api/types.ts'
 
 interface RecordedCall {
   method: string
@@ -66,7 +67,7 @@ function onlyCall(): RecordedCall {
 
 let failures = 0
 
-async function check(name: string, run: () => Promise<void>): Promise<void> {
+async function check(name: string, run: () => Promise<void> | void): Promise<void> {
   try {
     await run()
     console.log(`ok   ${name}`)
@@ -168,6 +169,148 @@ await check('getExport({project}) -> GET /api/export?project=task-prueba', async
   assert.equal(call.method, 'GET')
   assert.equal(call.url, '/api/export?project=task-prueba')
   assert.ok(!call.url.includes('all_projects'), 'project and all_projects must not travel together')
+})
+
+// ---- Phase 3: mark reviewed, create memory, judge relations ----
+
+await check('manualSessionId("task-prueba") -> manual-save-task-prueba, no request', () => {
+  reset({})
+  assert.equal(api.manualSessionId('task-prueba'), 'manual-save-task-prueba')
+  assert.equal(calls.length, 0, `a pure helper reached the network: ${JSON.stringify(calls)}`)
+})
+
+await check('markReviewed(7, {allProjects}) -> POST /api/review/mark_reviewed?all_projects=true', async () => {
+  reset({ id: 7, sync_id: 'obs-7', title: 'x', type: 'decision', state: 'active' })
+  const result = await api.markReviewed(7, { allProjects: true })
+  const call = onlyCall()
+  assert.equal(call.method, 'POST')
+  assert.equal(call.url, '/api/review/mark_reviewed?all_projects=true')
+  assert.equal(call.body, '{"observation_id":7}')
+  assert.match(call.headers['content-type'] ?? '', /^application\/json/)
+  assert.equal(result.id, 7)
+})
+
+await check("markReviewed(7, {project}) -> the project query parameter, no all_projects", async () => {
+  reset({ id: 7, sync_id: 'obs-7', title: 'x', type: 'decision', state: 'active' })
+  await api.markReviewed(7, { project: 'task-prueba' })
+  const call = onlyCall()
+  assert.equal(call.method, 'POST')
+  assert.equal(call.url, '/api/review/mark_reviewed?project=task-prueba')
+  assert.ok(!call.url.includes('all_projects'), 'project and all_projects must not travel together')
+  assert.equal(call.body, '{"observation_id":7}')
+})
+
+await check('createSession(input) -> POST /api/sessions with ownership_mode project_owned', async () => {
+  reset({ id: 'manual-save-task-prueba', status: 'created' })
+  const result = await api.createSession({
+    id: 'manual-save-task-prueba',
+    project: 'task-prueba',
+    directory: 'C:/tmp/task-prueba',
+  })
+  const call = onlyCall()
+  assert.equal(call.method, 'POST')
+  assert.equal(call.url, '/api/sessions')
+  assert.match(call.headers['content-type'] ?? '', /^application\/json/)
+  assert.deepEqual(JSON.parse(call.body!), {
+    id: 'manual-save-task-prueba',
+    project: 'task-prueba',
+    directory: 'C:/tmp/task-prueba',
+    ownership_mode: 'project_owned',
+  })
+  assert.deepEqual(result, { id: 'manual-save-task-prueba', status: 'created' })
+})
+
+await check('createObservation(input) -> POST /api/observations with exactly those keys', async () => {
+  reset({ id: 12, status: 'saved' })
+  const result = await api.createObservation({
+    sessionId: 'manual-save-task-prueba',
+    type: 'decision',
+    title: 'x',
+    content: 'contenido',
+    project: 'task-prueba',
+    scope: 'project',
+    topicKey: 'tema',
+  })
+  const call = onlyCall()
+  assert.equal(call.method, 'POST')
+  assert.equal(call.url, '/api/observations')
+  assert.match(call.headers['content-type'] ?? '', /^application\/json/)
+  assert.deepEqual(JSON.parse(call.body!), {
+    session_id: 'manual-save-task-prueba',
+    type: 'decision',
+    title: 'x',
+    content: 'contenido',
+    project: 'task-prueba',
+    scope: 'project',
+    topic_key: 'tema',
+  })
+  assert.deepEqual(result, { id: 12, status: 'saved' })
+})
+
+await check('createObservation without scope/topic_key -> those keys are omitted, not empty', async () => {
+  reset({ id: 13, status: 'saved' })
+  await api.createObservation({
+    sessionId: 'manual-save-task-prueba',
+    type: 'manual',
+    title: 'x',
+    content: 'contenido',
+    project: 'task-prueba',
+    scope: '',
+    topicKey: '',
+  })
+  const call = onlyCall()
+  const body = JSON.parse(call.body!) as Record<string, unknown>
+  assert.deepEqual(Object.keys(body).sort(), ['content', 'project', 'session_id', 'title', 'type'])
+  assert.ok(!('scope' in body), `scope travelled as an empty value: ${call.body}`)
+  assert.ok(!('topic_key' in body), `topic_key travelled as an empty value: ${call.body}`)
+})
+
+await check('judgeRelation(valid) -> POST /api/conflicts/judge with the minimal body', async () => {
+  reset({ relation: { id: 1, sync_id: 'rel-1', relation: 'related', judgment_status: 'judged' } })
+  const result = await api.judgeRelation({ judgmentId: 'rel-1', relation: 'related' })
+  const call = onlyCall()
+  assert.equal(call.method, 'POST')
+  assert.equal(call.url, '/api/conflicts/judge')
+  assert.match(call.headers['content-type'] ?? '', /^application\/json/)
+  assert.deepEqual(JSON.parse(call.body!), { judgment_id: 'rel-1', relation: 'related' })
+  assert.equal(result.relation.sync_id, 'rel-1')
+})
+
+await check('judgeRelation with reason/evidence/confidence -> optional fields included', async () => {
+  reset({ relation: { id: 1, sync_id: 'rel-1', relation: 'conflicts_with', judgment_status: 'judged' } })
+  await api.judgeRelation({
+    judgmentId: 'rel-1',
+    relation: 'conflicts_with',
+    reason: 'motivo',
+    evidence: 'evidencia',
+    confidence: 0.4,
+  })
+  const call = onlyCall()
+  assert.deepEqual(JSON.parse(call.body!), {
+    judgment_id: 'rel-1',
+    relation: 'conflicts_with',
+    reason: 'motivo',
+    evidence: 'evidencia',
+    confidence: 0.4,
+  })
+})
+
+await check('judgeRelation(invalid verb) -> rejected before sending, zero requests', async () => {
+  reset({})
+  await assert.rejects(
+    () => api.judgeRelation({ judgmentId: 'rel-1', relation: 'superseded' as RelationVerb }),
+    /invalid relation verb/,
+  )
+  assert.equal(calls.length, 0, `an invalid verb reached the network: ${JSON.stringify(calls)}`)
+})
+
+await check('judgeRelation(confidence 1.5) -> rejected before sending, zero requests', async () => {
+  reset({})
+  await assert.rejects(
+    () => api.judgeRelation({ judgmentId: 'rel-1', relation: 'related', confidence: 1.5 }),
+    /confidence must be a number between 0\.0 and 1\.0/,
+  )
+  assert.equal(calls.length, 0, `an out-of-range confidence reached the network: ${JSON.stringify(calls)}`)
 })
 
 if (failures > 0) {

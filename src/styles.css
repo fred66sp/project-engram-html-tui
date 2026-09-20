@@ -557,6 +557,31 @@ code {
   font-size: 12px;
 }
 
+/* Inline list action (review queue): the button sits next to the card, never inside the
+   card's own RouterLink, so clicking it does not navigate to the detail view. */
+.card-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.card-row > .card {
+  flex: 1;
+  min-width: 0;
+}
+
+.card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+}
+
+/* Verdict form nested in a conflict row: same fields as the observation edit form. */
+.relation-row .edit-form {
+  margin-top: 10px;
+}
+
 /* Soft-delete confirmation: a modal because the action is irreversible. */
 .dialog-backdrop {
   position: fixed;
