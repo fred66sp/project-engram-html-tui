@@ -39,12 +39,12 @@
   escucha cuando se ejecuta como programa principal.
 - Pantalla de Comandos (`/commands`) con el catálogo único de los comandos de consola: los scripts
   npm de este proyecto y el CLI completo de Engram v2.0.0, cada entrada con el comando exacto,
-  botón de copiar, descripción, propósito y aviso en los destructivos. La página trae sus propios
-  filtros locales —por grupo y por texto libre, buscando en el comando, el nombre, la descripción y
-  el propósito— con botón «Limpiar», y no muestra la barra de proyecto/scope/tipo del armazón
-  porque una lista estática no tiene nada que filtrar. `PROJECT_COMMANDS` de la pantalla de
-  Proyectos se deriva de ese catálogo y la Ayuda ahora enlaza a él en vez de repetir las tablas de
-  arranque y comprobaciones; la página no ejecuta nada.
+  botón de copiar, descripción, propósito y aviso en los destructivos. Los filtros del catálogo
+  —grupo y búsqueda por texto libre, buscando en el comando, el nombre, la descripción y el
+  propósito— viven en la barra superior, en la misma franja y con el mismo aspecto que los filtros
+  de las demás pantallas, no dentro de la página. `PROJECT_COMMANDS` de la pantalla de Proyectos se
+  deriva de ese catálogo y la Ayuda ahora enlaza a él en vez de repetir las tablas de arranque y
+  comprobaciones; la página no ejecuta nada.
 - `npm run check:commands`, que comprueba el catálogo sin red ni procesos: ids únicos, entradas
   completas y ningún texto de comando repetido.
 - La barra de filtros de la interfaz ahora solo se renderiza en las pantallas que usan los filtros

@@ -544,3 +544,36 @@ export function commandText(id: string): string {
   if (!entry) throw new Error(`unknown command id: ${id}`)
   return entry.command
 }
+
+/** Shape of the catalog filters, shared by the shell bar and the /commands view. */
+export interface CommandFilter {
+  /** Empty string means "every group". */
+  group: string
+  /** Free text matched against command, label, description and purpose. */
+  query: string
+}
+
+/** Accent- and case-insensitive fold: "busqueda" must find "Búsqueda". */
+function fold(value: string): string {
+  return value.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
+}
+
+/** The query searches every text an entry shows, so the description is searchable too. */
+function matches(entry: CommandEntry, needle: string): boolean {
+  if (!needle) return true
+  const haystack = [entry.command, entry.label, entry.description, entry.purpose].join(' ')
+  return fold(haystack).includes(needle)
+}
+
+/** Only the groups that still have a match survive, so an empty group never renders. */
+export function filterCommandGroups(filter: CommandFilter): CommandGroup[] {
+  const needle = fold(filter.query.trim())
+  return COMMAND_GROUPS.filter((group) => filter.group === '' || group.id === filter.group)
+    .map((group) => ({ ...group, entries: group.entries.filter((entry) => matches(entry, needle)) }))
+    .filter((group) => group.entries.length > 0)
+}
+
+/** Entries the current filters keep visible, for the bar's counter. */
+export function countCommands(filter: CommandFilter): number {
+  return filterCommandGroups(filter).reduce((total, group) => total + group.entries.length, 0)
+}

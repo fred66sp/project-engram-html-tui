@@ -58,10 +58,12 @@ entrada muestra el comando exacto con botón **Copiar**, qué hace (descripción
   Proyectos ya tenía incrustado. Un fallo de `navigator.clipboard` se muestra en pantalla; nunca
   falla en silencio.
 - **Sin ejecución, sin red y sin estado**: la vista es estática, no llama al runtime y no tiene
-  `onMounted`. Las únicas interacciones son copiar y los filtros locales.
-- **Los filtros son locales a la página** (grupo + texto, con botón «Limpiar»): filtran el catálogo
-  en memoria, sin consultar al runtime. La barra de proyecto/scope/tipo del armazón no se renderiza
-  aquí ni en Proyectos, Ayuda, el detalle de observación y el timeline, porque en esas rutas no
+  `onMounted`. Las únicas interacciones son copiar y los filtros del catálogo.
+- **Los filtros viven en la barra del armazón**, con tres estados declarados por la ruta:
+  proyecto/scope/tipo por defecto, el par grupo/búsqueda del catálogo
+  (`meta: { filters: 'commands' }`) y oculta (`meta: { filters: false }`). Filtran el catálogo en
+  memoria con el mismo aspecto que las demás pantallas, sin consultar al runtime; la barra queda
+  oculta en Proyectos, Ayuda, el detalle de observación y el timeline, porque en esas rutas no
   filtraba nada.
 
 ## Tareas

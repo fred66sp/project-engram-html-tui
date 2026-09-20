@@ -26,7 +26,7 @@ export const router = createRouter({
     { path: '/conflicts', name: 'conflicts', component: ConflictsView },
     { path: '/new', name: 'new-memory', component: NewMemoryView },
     { path: '/projects', name: 'projects', component: ProjectsView, meta: { filters: false } },
-    { path: '/commands', name: 'commands', component: CommandsView, meta: { filters: false } },
+    { path: '/commands', name: 'commands', component: CommandsView, meta: { filters: 'commands' } },
     { path: '/help', name: 'help', component: HelpView, meta: { filters: false } },
   ],
 })
