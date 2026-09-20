@@ -1,6 +1,6 @@
 # Feature: engram-web — interfaz web de gestión de memoria Engram
 
-Rama: `feature/engram-web` (base: `master`, repositorio sin commits previos).
+Rama: `feature/engram-web`, integrada en `main` (el repositorio no tenía ningún commit previo).
 
 ## Objetivo
 
