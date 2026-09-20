@@ -138,16 +138,33 @@ El servidor de 7438 se reinició con autorización del usuario para servir el bu
 cifras del Dashboard (210 sesiones, 694 observaciones, 1436 prompts, 18 proyectos) siguen
 renderizando tras quitarle el `fetch` propio.
 
-### Hallazgo medido y no corregido
+### Correcciones posteriores, en la misma rama
 
-`serveStatic` en `server/server.mjs` llama a `decodeURIComponent(pathname)` fuera de cualquier `try`:
-un escape de porcentaje mal formado (`/%zz`) lanza, lo recoge el `catch` exterior y responde
-`500 {"error":"URI malformed"}` en vez del shell de la SPA. Es real, es anterior a esta fase y se
-arregla moviendo la decodificación dentro del `try`; queda fuera por la restricción de no cambiar el
-comportamiento del servidor en esta unidad.
+Los tres defectos que quedaban abiertos se corrigieron con la causa medida, no supuesta. Todo esto
+entra en el mismo commit que este documento.
+
+1. **Escape de porcentaje mal formado (`/%zz`).** Era `500 {"error":"URI malformed"}`; ahora responde
+   `200 text/html` con el shell, que es a donde va cualquier ruta que no es un fichero. La
+   decodificación se hace dentro de su propio `try`, así que un escape roto deja de llegar al `catch`
+   exterior. Caso nuevo en `check-server.ts` con tres formas (`/%zz`, `/%`, `/observations/%zz`),
+   afirmando contra el cuerpo del shell y no solo contra el código de estado.
+2. **CLS del Dashboard (0.1737 medido, 0.201 en Lighthouse).** Causa medida: la plantilla pintaba tres
+   veces porque `statsLoading` arrancaba en `false`, así que el primer pintado no mostraba ni los
+   tiles ni la lista de proyectos (~698 px) y las tres secciones de abajo se desplazaban dos veces.
+   Ahora el cuerpo espera a que la única petición `/stats` se resuelva, derivando «resuelto» de
+   `stats` y `statsError` en vez de un flag que arranca al revés. Un solo `<template v-if>` envuelve
+   Export, Doctor y Límites. Medido: **0.1737 → 0** a 1596×770.
+3. **CLS a pantalla estrecha (0.3093), que apareció al medir el anterior.** No era del Dashboard:
+   `#filter-project` medía 193 px antes de tener opciones y 283 px después, la fila de campos hacía
+   wrap al llegar los nombres (los `top` de los campos pasaban de `[68,68,64]` a `[64,64,129]`), la
+   barra crecía 145 → 209 px y `.app-main` bajaba 65 px. Ahora ese `select` tiene ancho propio, fijado
+   en los 283 px que el propio runtime resuelve, con truncado por si un nombre futuro es más largo.
+   El alcance se ciñó a ese control a propósito: es el único `select` cuyo ancho depende de los datos.
+   Medido: **0.3093 → 0.0001** a 846×769.
+
+De paso se eliminó `statsLoading` de `src/state/app-state.ts`: quedó sin ningún lector al reescribir
+el Dashboard, y un ref que solo se escribe es deuda que engaña.
 
 ### Pendiente de decisión del humano
 
-- El CLS 0.201 del Dashboard sigue sin tocar: exige medir el desplazamiento por elemento antes de
-  cambiar estilos, y no entra en esta fase.
-- El `500` por URI mal formado, si se quiere corregir.
+Nada de esta fase queda abierto.

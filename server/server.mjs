@@ -76,7 +76,17 @@ async function proxy(req, res, url, { engramUrl, token }) {
 }
 
 async function serveStatic(res, pathname, dist) {
-  const relative = normalize(decodeURIComponent(pathname)).replace(/^([/\\])+/, '')
+  // A malformed percent-escape (`/%zz`) is not a file path, so it takes the SPA fallback below
+  // like any other unknown route. Decoding it here keeps the failure from reaching the outer
+  // handler, which would answer 500 for a request that is merely an unknown path.
+  let decoded = ''
+  try {
+    decoded = decodeURIComponent(pathname)
+  } catch {
+    // Malformed escape: `decoded` keeps its empty value, so the request reads as an unknown
+    // path and the SPA fallback below answers instead of the outer handler's 500.
+  }
+  const relative = normalize(decoded).replace(/^([/\\])+/, '')
   let file = join(dist, relative)
   if (!file.startsWith(dist)) file = join(dist, 'index.html')
 

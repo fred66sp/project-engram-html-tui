@@ -147,6 +147,25 @@ a {
   resize: vertical;
 }
 
+/*
+ * A definite width for the project selector, declared after the shared rule above so it wins at
+ * equal specificity. Without it the `<select>` borrows its used width from its widest option, so it
+ * grew from 193px to 283px when the project names arrived, pushed the third `.field` onto a second
+ * row, and moved `.app-main` down after first paint. 283px is the intrinsic width that same runtime
+ * resolved for the longest name in the store (`project-pocketbase-boilerplate`, 30 characters at
+ * 14px monospace plus padding, border and the native arrow), so the bar keeps its final height with
+ * no residual shift. The truncation keeps a longer future name from resizing the row again.
+ *
+ * Scoped to this one control on purpose: it is the only `<select>` whose width depends on data, and
+ * every other select in the app already has a fixed option list and a stable width.
+ */
+#filter-project {
+  width: 283px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 .filter-note {
   flex-basis: 100%;
   margin: 0;

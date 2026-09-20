@@ -378,6 +378,23 @@ try {
       assert.equal(body, SHELL)
       assert.equal(upstreamRequests.length, 0)
     })
+
+    await check('a malformed percent-escape falls back to the SPA shell, never a 500 error body', async () => {
+      reset()
+      // decodeURIComponent rejects all three; a malformed escape is not a file path, so the
+      // answer has to be the same as for any other unknown route, not 500 {"error":"URI malformed"}.
+      for (const path of ['/%zz', '/%', '/observations/%zz']) {
+        const response = await call(appPort, path)
+        assert.equal(response.status, 200, `${path} did not answer 200`)
+        assert.equal(
+          response.headers.get('content-type'),
+          'text/html; charset=utf-8',
+          `${path} did not answer with the shell content-type`,
+        )
+        assert.equal(await response.text(), SHELL, `${path} did not return the SPA shell`)
+      }
+      assert.equal(upstreamRequests.length, 0, 'a static path reached the runtime')
+    })
   } finally {
     await close(app)
     await close(offline)

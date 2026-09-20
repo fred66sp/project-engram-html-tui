@@ -24,7 +24,6 @@ export const runtimeError = ref('')
  * need it, and they mount in the same tick, so they must share one request and one result.
  */
 export const stats = ref<Stats | null>(null)
-export const statsLoading = ref(false)
 /**
  * Kept apart from `runtimeError` on purpose: `loadHealth()` clears `runtimeError` on success,
  * which would erase a `/stats` failure the dashboard still has to show.
@@ -66,7 +65,6 @@ let statsRequest: Promise<void> | null = null
  */
 export function loadStats(): Promise<void> {
   if (statsRequest) return statsRequest
-  statsLoading.value = true
   statsError.value = ''
   statsRequest = (async () => {
     try {
@@ -80,7 +78,6 @@ export function loadStats(): Promise<void> {
       statsError.value = message
       runtimeError.value = message
     } finally {
-      statsLoading.value = false
       statsRequest = null
     }
   })()
