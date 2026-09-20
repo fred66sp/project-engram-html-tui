@@ -15,6 +15,10 @@ import { filters, health, loadHealth, projects, runtimeError } from '../state/ap
     <nav class="app-nav" aria-label="Navegación principal">
       <RouterLink to="/" active-class="is-active">Dashboard</RouterLink>
       <RouterLink to="/recent" active-class="is-active">Recientes</RouterLink>
+      <RouterLink to="/search" active-class="is-active">Búsqueda</RouterLink>
+      <RouterLink to="/sessions" active-class="is-active">Sesiones</RouterLink>
+      <RouterLink to="/review" active-class="is-active">Review</RouterLink>
+      <RouterLink to="/conflicts" active-class="is-active">Conflictos</RouterLink>
     </nav>
 
     <section class="filter-bar" aria-label="Filtros de lectura">

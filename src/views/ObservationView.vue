@@ -59,6 +59,7 @@ watch(() => route.params.id, load)
         <span class="badge">{{ observation.type }}</span>
         <span class="badge">{{ observation.scope || 'sin scope' }}</span>
         <span class="badge">{{ observation.project || 'sin proyecto' }}</span>
+        <RouterLink class="btn" :to="`/timeline/${observation.id}`">Ver timeline</RouterLink>
         <button type="button" class="btn" :disabled="loading" @click="load()">Recargar</button>
       </div>
 

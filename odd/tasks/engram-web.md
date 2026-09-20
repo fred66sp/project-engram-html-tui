@@ -83,11 +83,11 @@ duplicate_count, last_seen_at, created_at, updated_at, pinned?}`.
 | 2 | Cliente API tipado (`src/api/`) con tipos y manejo de errores | hecho |
 | 3 | Shell de UI: layout, navegación, selector de proyecto/scope/tipo y estado global de filtros | hecho |
 | 4 | Dashboard: stats, proyectos y resumen de `doctor` | hecho |
-| 5 | Búsqueda: `q`, tipo, scope, proyecto y `match_mode`, con `rank` visible | pendiente |
+| 5 | Búsqueda: `q`, tipo, scope, proyecto y `match_mode`, con `rank` visible | hecho — pendiente de commit |
 | 6 | Recientes + detalle de observación: markdown saneado, metadatos y enlace a timeline | hecho |
-| 7 | Timeline con `project` explícito de la observación focal | pendiente |
-| 8 | Sesiones y prompts: listado de sesiones, metadatos de sesión y prompts recientes | pendiente |
-| 9 | Review y conflictos: cola de revisión, relaciones y estadísticas | pendiente |
+| 7 | Timeline con `project` explícito de la observación focal | hecho — pendiente de commit |
+| 8 | Sesiones y prompts: listado de sesiones, metadatos de sesión y prompts recientes | hecho — pendiente de commit |
+| 9 | Review y conflictos: cola de revisión, relaciones y estadísticas | hecho — pendiente de commit |
 | 10 | Verificación: build, typecheck, smoke test contra API viva y revisión de contrato | pendiente |
 
 ## Evidencia
@@ -115,8 +115,37 @@ duplicate_count, last_seen_at, created_at, updated_at, pinned?}`.
 ### Alcance cerrado en la tarea 6
 
 La tarea 6 se cierra por lo entregado en esta unidad: listado de recientes y detalle de
-observación con markdown saneado y metadatos. El **enlace a timeline** queda diferido a la tarea 7:
-la ruta `/timeline` no existe todavía y este proyecto prohíbe registrar enlaces muertos.
+observación con markdown saneado y metadatos. El **enlace a timeline** quedó diferido a la tarea 7
+porque la ruta `/timeline` no existía todavía y este proyecto prohíbe registrar enlaces muertos;
+la tarea 7 ya registró la ruta y añadió el enlace «Ver timeline» en el detalle.
+
+### Verificación mecánica (2026-09-20) — vistas restantes (tareas 5, 7, 8, 9)
+
+- `npm run typecheck` → exit 0.
+- `npm run build` → exit 0. Salida emitida: `dist/index.html` 0.39 kB,
+  `dist/assets/index-BMURrQc6.css` 5.67 kB (gzip 1.64 kB), `dist/assets/index-C4UzkrV9.js`
+  196.69 kB (gzip 68.54 kB).
+- `npm run smoke` → exit 0 contra el runtime vivo: engram 2.0.0, 666 observaciones en 18
+  proyectos, `getDoctor()` ok con 9 chequeos.
+- Smoke de producción a través del proxy (`npm start`, puerto 7438), HTTP 200 en todas las rutas
+  cliente: `/`, `/search`, `/timeline/1188`, `/sessions`, `/review`, `/conflicts` (fallback SPA) y
+  JSON real de `curl -s 'http://127.0.0.1:7438/api/conflicts?all_projects=true&limit=2'`
+  (`total` 541). Servidor detenido después (puerto 7438 verificado cerrado).
+- Formas reales confirmadas por HTTP antes de implementar: `/conflicts/stats` con
+  `by_relation` (5 claves) y `by_judgment_status` (`judged` 273, `orphaned` 256, `pending` 12);
+  `/timeline` sin `project` → 404 y con `project` → `{focus, before, after, session_info,
+  total_in_range}`; las entradas de `before`/`after` no traen `sync_id`; `/review` → `{count,
+  observations}`.
+
+### Carencias del API que exponen las vistas nuevas
+
+1. **Detalle de sesión sin cobertura HTTP** (ya listada arriba): no hay endpoint que liste las
+   observaciones ni los prompts de una sesión, por lo que `SessionsView` muestra solo metadatos de
+   sesión (`GET /sessions/{id}`) y ofrece el rodeo de filtrar `/recent` por el proyecto de la sesión.
+2. **Sin resolución de identidad de conflicto**: `GET /conflicts` publica `source_id`/`target_id`
+   con valores `obs-…` (sync_id), no los ids numéricos que exige `/observations/:id`, y ningún
+   endpoint traduce unos a otros. `ConflictsView` renderiza los títulos como texto plano sin enlace
+   y lo declara en la UI; enlazar filas produciría rutas muertas.
 
 ### Verificación visual pendiente del humano
 
@@ -128,3 +157,16 @@ No hubo navegador disponible, por lo que falta comprobar en uno:
   en cliente sobre la página cargada.
 - Markdown: tablas, bloques de código y que un enlace externo abra en pestaña nueva.
 - Estados de carga, vacío y error en recientes y detalle.
+- Búsqueda: que el estado inicial invite a escribir, que una consulta vacía no dispare petición,
+  que el chip `#rank` se lea junto a cada resultado y que cambiar el proyecto global re-ejecute la
+  búsqueda activa.
+- Timeline: que la observación focal se vea resaltada, que los vecinos enlacen a su detalle, que los
+  selectores 1–10 recarguen, y los estados de observación sin proyecto y de error 404.
+- Sesiones: que seleccionar una sesión cargue el panel inline y que el botón de rodeo lleve a
+  `/recent` con el proyecto ya seleccionado; que la búsqueda de prompts con `q` vacío vuelva a
+  recientes.
+- Conflictos: paginación anterior/siguiente, rango `offset+1–offset+n de total`, selectores de
+  página y estado, y que ninguna fila sea un enlace.
+- Review: mensaje de vacío «no hay observaciones pendientes de revisión» y la nota de solo lectura.
+- Legibilidad de los chips nuevos (relación/estado) y del bloque de prompt con `white-space:
+  pre-wrap`.
